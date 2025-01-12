@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     View,
     Text,
@@ -14,6 +14,9 @@ import {
     Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from '../../utils/axios';
+import {loadUser, login} from "../../services/AuthService";
+import AuthContext from "../../contexts/AuthContext";
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -23,18 +26,34 @@ const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
 export default function LoginScreen() {
+    const setUser = useContext(AuthContext);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
+        setError('');
         if (!email || !password) {
             setError('يرجى ملء جميع الحقول');
             return;
         }
-        console.log('بيانات تسجيل الدخول:', { email, password });
-        setError('');
+        try {
+            await login( {
+                email,
+                password,
+                device_name: `${Platform.OS} ${Platform.Version}`,
+            })
+
+            const user = await loadUser();
+            setUser(user);
+        } catch (e) {
+            console.log(e)
+            if(e.response?.status === 422) {
+                setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+            }
+        }
+
     };
 
     return (
