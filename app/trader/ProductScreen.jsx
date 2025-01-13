@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
+    FlatList,
     Image,
     TouchableOpacity,
-    ScrollView,
     Dimensions,
     StatusBar,
     I18nManager,
+    ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useLocalSearchParams, router } from 'expo-router';
+import axios from '../../utils/axios';
 import logo from '../../assets/images/logo.webp';
 
 // Force RTL layout
@@ -21,112 +24,102 @@ const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
-// Sample product data
-const productScreen = {
-    id: '1',
-    name: 'قميص قطني فاخر',
-    price: 120,
-    discountPrice: 99,
-    images: [
-        logo,
-        logo,
-        logo,
-    ],
-    description: 'قميص قطني فاخر مصنوع من أجود أنواع القطن المصري. مريح وأنيق، مناسب للمناسبات الرسمية وشبه الرسمية.',
-    features: [
-        'قطن مصري 100%',
-        'متوفر بعدة ألوان',
-        'أزرار مصدفية',
-        'ياقة كلاسيكية',
-    ],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    minOrder: 50,
-};
+const ProductItem = ({ item, onAddToCart }) => (
+    <View style={styles.productItem}>
+        <Image 
+            source={logo} 
+            style={styles.productImage}
+        />
+        <View style={styles.productInfo}>
+            <Text style={styles.productName}>{item.name}</Text>
+            <Text style={styles.productDescription}>{item.description}</Text>
+            <Text style={styles.productPrice}>{item.price} ريال</Text>
+            <TouchableOpacity 
+                style={styles.addToCartButton}
+                onPress={() => onAddToCart(item)}
+            >
+                <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.addToCartText}>إضافة للسلة</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+);
 
-export default function ProductShowScreen() {
-    const [selectedImage, setSelectedImage] = useState(0);
-    const [selectedSize, setSelectedSize] = useState('');
+export default function ProductScreen() {
+    const { storeId } = useLocalSearchParams();
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        loadProducts();
+    }, [storeId]);
+
+    const loadProducts = async () => {
+        try {
+            setLoading(true);
+            const { data } = await axios.get(`/wholesale-stores/${storeId}/products`);
+            setProducts(data);
+        } catch (error) {
+            console.error('Error loading products:', error);
+            setError('حدث خطأ في تحميل المنتجات');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddToCart = async (product) => {
+        try {
+            await axios.post('/cart/add', {
+                product_id: product.id,
+                quantity: 1
+            });
+            Alert.alert('نجاح', 'تمت إضافة المنتج إلى السلة');
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            Alert.alert('خطأ', 'حدث خطأ في إضافة المنتج إلى السلة');
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={GREEN} />
+            </View>
+        );
+    }
 
     return (
-        <ScrollView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                >
                     <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>تفاصيل المنتج</Text>
-                <TouchableOpacity style={styles.shareButton}>
-                    <Ionicons name="share-social" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
+                <Text style={styles.headerTitle}>المنتجات</Text>
             </View>
-            <View style={styles.imageContainer}>
-                <Image source={ productScreen.images[selectedImage] } style={styles.mainImage} />
-                <View style={styles.imagePicker}>
-                    {productScreen.images.map((image, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            onPress={() => setSelectedImage(index)}
-                            style={[
-                                styles.thumbnailContainer,
-                                selectedImage === index && styles.selectedThumbnail,
-                            ]}
-                        >
-                            <Image source={ image } style={styles.thumbnail} />
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-            <View style={styles.infoContainer}>
-                <Text style={styles.productName}>{productScreen.name}</Text>
-                <View style={styles.priceContainer}>
-                    <Text style={styles.discountPrice}>{productScreen.discountPrice} ريال</Text>
-                    <Text style={styles.originalPrice}>{productScreen.price} ريال</Text>
-                </View>
-                <Text style={styles.description}>{productScreen.description}</Text>
-                <View style={styles.featuresContainer}>
-                    <Text style={styles.featuresTitle}>المميزات:</Text>
-                    {productScreen.features.map((feature, index) => (
-                        <View key={index} style={styles.featureItem}>
-                            <Ionicons name="checkmark-circle" size={20} color={GREEN} />
-                            <Text style={styles.featureText}>{feature}</Text>
-                        </View>
-                    ))}
-                </View>
-                <View style={styles.sizesContainer}>
-                    <Text style={styles.sizesTitle}>المقاسات المتوفرة:</Text>
-                    <View style={styles.sizeButtons}>
-                        {productScreen.sizes.map((size) => (
-                            <TouchableOpacity
-                                key={size}
-                                style={[
-                                    styles.sizeButton,
-                                    selectedSize === size && styles.selectedSizeButton,
-                                ]}
-                                onPress={() => setSelectedSize(size)}
-                            >
-                                <Text style={[
-                                    styles.sizeButtonText,
-                                    selectedSize === size && styles.selectedSizeButtonText,
-                                ]}>{size}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-                <View style={styles.orderInfo}>
-                    <Ionicons name="information-circle-outline" size={24} color={GREEN} />
-                    <Text style={styles.orderInfoText}>الحد الأدنى للطلب: {productScreen.minOrder} قطعة</Text>
-                </View>
-            </View>
-            <View style={styles.actionContainer}>
-                <TouchableOpacity style={styles.addToCartButton}>
-                    <Text style={styles.addToCartButtonText}>أضف إلى السلة</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.contactButton}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={24} color={GREEN} />
-                    <Text style={styles.contactButtonText}>تواصل مع البائع</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+            
+            {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+            ) : (
+                <FlatList
+                    data={products}
+                    renderItem={({ item }) => (
+                        <ProductItem 
+                            item={item}
+                            onAddToCart={handleAddToCart}
+                        />
+                    )}
+                    keyExtractor={item => item.id.toString()}
+                    contentContainerStyle={styles.productsList}
+                    refreshing={loading}
+                    onRefresh={loadProducts}
+                />
+            )}
+        </View>
     );
 }
 
@@ -137,7 +130,6 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: GREEN,
         paddingTop: 50,
@@ -148,200 +140,88 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     headerTitle: {
+        flex: 1,
         color: '#FFFFFF',
         fontSize: 20,
         fontWeight: 'bold',
         fontFamily: 'Arial',
+        textAlign: 'center',
+        marginRight: 40,
     },
-    shareButton: {
-        padding: 5,
-    },
-    imageContainer: {
-        width: '100%',
-        aspectRatio: 1,
-        backgroundColor: LIGHT_GREEN,
-    },
-    mainImage: {
-        width: '100%',
-        height: '80%',
-        resizeMode: 'cover',
-    },
-    imagePicker: {
-        flexDirection: 'row',
+    loadingContainer: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        height: '20%',
     },
-    thumbnailContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 10,
-        marginHorizontal: 5,
-        overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: 'transparent',
+    errorText: {
+        color: '#FF3B30',
+        textAlign: 'center',
+        margin: 20,
     },
-    selectedThumbnail: {
-        borderColor: GREEN,
-    },
-    thumbnail: {
-        width: '100%',
-        height: '100%',
-        resizeMode: 'cover',
-    },
-    infoContainer: {
+    productsList: {
         padding: 20,
+    },
+    productItem: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        marginBottom: 20,
+        padding: 15,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    productImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 10,
+        marginLeft: 15,
+    },
+    productInfo: {
+        flex: 1,
     },
     productName: {
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#333333',
+        marginBottom: 5,
         fontFamily: 'Arial',
-        marginBottom: 10,
         textAlign: 'right',
     },
-    priceContainer: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        marginBottom: 15,
+    productDescription: {
+        fontSize: 14,
+        color: '#666666',
+        marginBottom: 10,
+        fontFamily: 'Arial',
+        textAlign: 'right',
     },
-    discountPrice: {
-        fontSize: 22,
+    productPrice: {
+        fontSize: 16,
         fontWeight: 'bold',
         color: GREEN,
-        fontFamily: 'Arial',
-        marginLeft: 10,
-    },
-    originalPrice: {
-        fontSize: 18,
-        color: '#999999',
-        textDecorationLine: 'line-through',
-        fontFamily: 'Arial',
-    },
-    description: {
-        fontSize: 16,
-        color: '#666666',
-        fontFamily: 'Arial',
-        lineHeight: 24,
-        marginBottom: 20,
-        textAlign: 'right',
-    },
-    featuresContainer: {
-        marginBottom: 20,
-    },
-    featuresTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
         marginBottom: 10,
-        textAlign: 'right',
-    },
-    featureItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 5,
-        justifyContent: 'flex-end',
-    },
-    featureText: {
-        fontSize: 16,
-        color: '#666666',
         fontFamily: 'Arial',
-        marginRight: 10,
         textAlign: 'right',
-    },
-    sizesContainer: {
-        marginBottom: 20,
-    },
-    sizesTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
-        marginBottom: 10,
-        textAlign: 'right',
-    },
-    sizeButtons: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        flexWrap: 'wrap',
-    },
-    sizeButton: {
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#CCCCCC',
-        marginLeft: 10,
-        marginBottom: 10,
-    },
-    selectedSizeButton: {
-        backgroundColor: GREEN,
-        borderColor: GREEN,
-    },
-    sizeButtonText: {
-        fontSize: 14,
-        color: '#333333',
-        fontFamily: 'Arial',
-    },
-    selectedSizeButtonText: {
-        color: '#FFFFFF',
-    },
-    orderInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: LIGHT_GREEN,
-        padding: 15,
-        borderRadius: 10,
-        justifyContent: 'flex-end',
-    },
-    orderInfoText: {
-        fontSize: 16,
-        color: '#333333',
-        fontFamily: 'Arial',
-        marginRight: 10,
-        textAlign: 'right',
-    },
-    actionContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        padding: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
     },
     addToCartButton: {
-        backgroundColor: GREEN,
-        paddingVertical: 15,
-        paddingHorizontal: 30,
-        borderRadius: 25,
-        flex: 1,
-        marginRight: 10,
-    },
-    addToCartButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
-        textAlign: 'center',
-    },
-    contactButton: {
         flexDirection: 'row',
+        backgroundColor: GREEN,
+        borderRadius: 8,
+        padding: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        borderWidth: 1,
-        borderColor: GREEN,
     },
-    contactButtonText: {
-        color: GREEN,
-        fontSize: 16,
+    addToCartText: {
+        color: '#FFFFFF',
+        marginRight: 5,
+        fontSize: 14,
         fontWeight: 'bold',
         fontFamily: 'Arial',
-        marginLeft: 5,
     },
 });
 

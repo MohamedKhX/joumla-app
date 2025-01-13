@@ -11,36 +11,62 @@ import {
     Dimensions,
     StatusBar,
     I18nManager,
-    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import logo from '../../assets/images/logo.webp';
+import {router} from 'expo-router';
+import axios from '../../utils/axios';
 
 // Force RTL layout
 I18nManager.forceRTL(true);
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
 export default function RegisterScreen() {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleRegister = () => {
-        if (!email || !password || !confirmPassword) {
+    const handleRegister = async () => {
+        setError('');
+        setLoading(true);
+
+        if (!name || !email || !password || !confirmPassword) {
             setError('يرجى ملء جميع الحقول');
+            setLoading(false);
             return;
         }
+
         if (password !== confirmPassword) {
             setError('كلمات المرور غير متطابقة');
+            setLoading(false);
             return;
         }
-        console.log('بيانات التسجيل:', { email, password });
-        setError('');
+
+        try {
+            await axios.post('/register', {
+                name,
+                email,
+                password,
+                password_confirmation: confirmPassword,
+                device_name: `${Platform.OS} ${Platform.Version}`,
+            });
+            
+            router.replace('/auth/LoginScreen');
+        } catch (error) {
+            if (error.response?.status === 422) {
+                setError('البريد الإلكتروني مستخدم بالفعل');
+            } else {
+                setError('حدث خطأ ما. يرجى المحاولة مرة أخرى');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -51,13 +77,22 @@ export default function RegisterScreen() {
             <StatusBar barStyle="dark-content" />
             <ScrollView contentContainerStyle={styles.scrollView}>
                 <View style={styles.logoContainer}>
-                    <Image
-                        source={ logo }
-                        style={styles.logo}
-                    />
+                    <Ionicons name="person-add-outline" size={100} color={GREEN} />
                 </View>
                 <View style={styles.formContainer}>
                     <Text style={styles.title}>إنشاء حساب</Text>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="الاسم"
+                            placeholderTextColor="#A0A0A0"
+                            value={name}
+                            onChangeText={setName}
+                            textAlign="right"
+                            editable={!loading}
+                        />
+                        <Ionicons name="person-outline" size={24} color={GREEN} style={styles.icon} />
+                    </View>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.input}
@@ -68,6 +103,7 @@ export default function RegisterScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             textAlign="right"
+                            editable={!loading}
                         />
                         <Ionicons name="mail-outline" size={24} color={GREEN} style={styles.icon} />
                     </View>
@@ -80,6 +116,7 @@ export default function RegisterScreen() {
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
                             textAlign="right"
+                            editable={!loading}
                         />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
                             <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={24} color={GREEN} />
@@ -95,15 +132,26 @@ export default function RegisterScreen() {
                             onChangeText={setConfirmPassword}
                             secureTextEntry={!showPassword}
                             textAlign="right"
+                            editable={!loading}
                         />
                         <Ionicons name="lock-closed-outline" size={24} color={GREEN} style={styles.icon} />
                     </View>
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                    <TouchableOpacity style={styles.button} onPress={handleRegister}>
-                        <Text style={styles.buttonText}>تسجيل</Text>
+                    <TouchableOpacity 
+                        style={[styles.button, loading && styles.buttonDisabled]} 
+                        onPress={handleRegister}
+                        disabled={loading}
+                    >
+                        <Text style={styles.buttonText}>
+                            {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.loginLink}>
-                        <Text style={styles.loginLinkText}>هل لديك حساب بالفعل؟ تسجيل الدخول</Text>
+                    <TouchableOpacity 
+                        style={styles.loginLink}
+                        onPress={() => router.push('/auth/LoginScreen')}
+                        disabled={loading}
+                    >
+                        <Text style={styles.loginLinkText}>لديك حساب بالفعل؟ تسجيل الدخول</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -125,11 +173,6 @@ const styles = StyleSheet.create({
     logoContainer: {
         alignItems: 'center',
         marginBottom: 40,
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        resizeMode: 'contain',
     },
     formContainer: {
         width: width * 0.9,
@@ -194,6 +237,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4.65,
         elevation: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.7,
     },
     buttonText: {
         color: 'white',

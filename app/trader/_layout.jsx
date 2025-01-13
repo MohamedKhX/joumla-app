@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, I18nManager, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, I18nManager, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useContext } from 'react';
+import { router } from 'expo-router';
+import AuthContext from '../../contexts/AuthContext';
+import { logout } from '../../services/AuthService';
+import { Tabs } from 'expo-router';
 
 import WholesaleStoresScreen from './WholesaleStoresScreen';
 import CartScreen from './CartScreen';
@@ -16,15 +21,42 @@ const Tab = createBottomTabNavigator();
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
-const CustomHeader = ({ title, onLogout }) => (
-    <View style={styles.header}>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.logoutText}>تسجيل الخروج</Text>
-        </TouchableOpacity>
-    </View>
-);
+const CustomHeader = ({ title }) => {
+    const { setUser } = useContext(AuthContext);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        try {
+            setIsLoggingOut(true);
+            await logout();
+            setUser(null);
+            router.replace('/auth/LoginScreen');
+        } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert('خطأ', 'حدث خطأ أثناء تسجيل الخروج');
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
+
+    return (
+        <View style={styles.header}>
+            <Text style={styles.headerTitle}>{title}</Text>
+            <TouchableOpacity
+                onPress={handleLogout}
+                style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+                disabled={isLoggingOut}
+            >
+                <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+                <Text style={styles.logoutText}>
+                    {isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
+                </Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
 
 const MainTabNavigator = () => {
     const handleLogout = () => {
@@ -128,6 +160,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Arial',
         fontSize: 16,
         marginRight: 5,
+    },
+    logoutButtonDisabled: {
+        opacity: 0.7,
     },
 });
 

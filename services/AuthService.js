@@ -3,16 +3,37 @@ import axios from "../utils/axios";
 import {setToken} from "./TokenService";
 
 export async function login(credentials) {
-    const {data} = await axios.post('/login', credentials);
-    await setToken(data.token);
+    try {
+        const {data} = await axios.post('/login', credentials);
+        
+        if (!data.token) {
+            throw new Error('No token received from server');
+        }
+        
+        await setToken(data.token);
+        return data;
+    } catch (error) {
+        console.error('Login error:', error.response?.data || error.message);
+        throw error;
+    }
 }
 
 export async function loadUser() {
-    const {data: user} = await axios.get('/user');
-    return user;
+    try {
+        const {data: user} = await axios.get('/user');
+        return user;
+    } catch (error) {
+        console.error('Load user error:', error.response?.data || error.message);
+        throw error;
+    }
 }
 
 export async function logout() {
-    await axios.post('/logout', {});
-    await setToken(null);
+    try {
+        await axios.post('/logout', {});
+        await setToken(null);
+    } catch (error) {
+        console.error('Logout error:', error.response?.data || error.message);
+        throw error;
+    }
 }

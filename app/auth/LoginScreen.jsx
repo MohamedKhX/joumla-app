@@ -11,49 +11,56 @@ import {
     Dimensions,
     StatusBar,
     I18nManager,
-    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from '../../utils/axios';
-import {loadUser, login} from "../../services/AuthService";
+import {router} from 'expo-router';
+import {login, loadUser} from "../../services/AuthService";
 import AuthContext from "../../contexts/AuthContext";
 
 // Force RTL layout
 I18nManager.forceRTL(true);
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
 export default function LoginScreen() {
-    const setUser = useContext(AuthContext);
+    const {setUser} = useContext(AuthContext);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
         setError('');
-        if (!email || !password) {
-            setError('يرجى ملء جميع الحقول');
-            return;
-        }
+        setLoading(true);
+        
         try {
-            await login( {
+            console.log('Attempting login with:', { email, password });
+            
+            await login({
                 email,
                 password,
                 device_name: `${Platform.OS} ${Platform.Version}`,
-            })
+            });
 
+            console.log('Login successful, loading user...');
             const user = await loadUser();
+            console.log('User loaded:', user);
+            
             setUser(user);
+            router.replace('/trader');
         } catch (e) {
-            console.log(e)
+            console.error('Login error:', e.response?.data || e.message);
             if(e.response?.status === 422) {
                 setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+            } else {
+                setError('حدث خطأ ما. يرجى المحاولة مرة أخرى');
             }
+        } finally {
+            setLoading(false);
         }
-
     };
 
     return (
@@ -64,10 +71,7 @@ export default function LoginScreen() {
             <StatusBar barStyle="dark-content" />
             <ScrollView contentContainerStyle={styles.scrollView}>
                 <View style={styles.logoContainer}>
-                    <Image
-                        source={{ uri: '/placeholder.svg?height=100&width=100' }}
-                        style={styles.logo}
-                    />
+                    <Ionicons name="person-circle-outline" size={100} color={GREEN} />
                 </View>
                 <View style={styles.formContainer}>
                     <Text style={styles.title}>تسجيل الدخول</Text>
@@ -81,6 +85,7 @@ export default function LoginScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             textAlign="right"
+                            editable={!loading}
                         />
                         <Ionicons name="mail-outline" size={24} color={GREEN} style={styles.icon} />
                     </View>
@@ -93,6 +98,7 @@ export default function LoginScreen() {
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
                             textAlign="right"
+                            editable={!loading}
                         />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
                             <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={24} color={GREEN} />
@@ -100,13 +106,20 @@ export default function LoginScreen() {
                         <Ionicons name="lock-closed-outline" size={24} color={GREEN} style={styles.icon} />
                     </View>
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                        <Text style={styles.buttonText}>دخول</Text>
+                    <TouchableOpacity 
+                        style={[styles.button, loading && styles.buttonDisabled]} 
+                        onPress={handleLogin}
+                        disabled={loading}
+                    >
+                        <Text style={styles.buttonText}>
+                            {loading ? 'جاري تسجيل الدخول...' : 'دخول'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.registerLink}>
+                    <TouchableOpacity 
+                        style={styles.registerLink}
+                        onPress={() => router.push('/auth/RegisterScreen')}
+                        disabled={loading}
+                    >
                         <Text style={styles.registerLinkText}>ليس لديك حساب؟ إنشاء حساب جديد</Text>
                     </TouchableOpacity>
                 </View>
@@ -129,11 +142,6 @@ const styles = StyleSheet.create({
     logoContainer: {
         alignItems: 'center',
         marginBottom: 40,
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        resizeMode: 'contain',
     },
     formContainer: {
         width: width * 0.9,
@@ -199,6 +207,9 @@ const styles = StyleSheet.create({
         shadowRadius: 4.65,
         elevation: 8,
     },
+    buttonDisabled: {
+        opacity: 0.7,
+    },
     buttonText: {
         color: 'white',
         fontSize: 18,
@@ -210,15 +221,6 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         textAlign: 'center',
         fontSize: 14,
-        fontFamily: 'Arial',
-    },
-    forgotPassword: {
-        marginTop: 15,
-    },
-    forgotPasswordText: {
-        color: GREEN,
-        fontSize: 14,
-        textAlign: 'center',
         fontFamily: 'Arial',
     },
     registerLink: {

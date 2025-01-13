@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,12 @@ import {
     StatusBar,
     I18nManager,
     TextInput,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import logo from '../../assets/images/logo.webp';
+import {Link, router} from 'expo-router';
+import axios from '../../utils/axios';
+import logo from '../../assets/images/logo.webp'; // Keep the logo as fallback
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -21,88 +24,101 @@ const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
-// Sample data for products
-const products = [
-    { id: '1', name: 'قميص قطني', price: 45, image: logo, category: 'ملابس' },
-    { id: '2', name: 'بنطلون جينز', price: 60, image: logo, category: 'ملابس' },
-    { id: '3', name: 'حذاء رياضي', price: 80, image: logo, category: 'أحذية' },
-    { id: '4', name: 'ساعة يد', price: 120, image: logo, category: 'إكسسوارات' },
-    { id: '5', name: 'حقيبة ظهر', price: 55, image: logo, category: 'حقائب' },
-    { id: '6', name: 'نظارة شمسية', price: 35, image: logo, category: 'إكسسوارات' },
-];
-
-const ProductItem = ({ item, onPress }) => (
-    <TouchableOpacity style={styles.productItem} onPress={onPress}>
-        <Image source={ item.image } style={styles.productImage} />
-        <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.name}</Text>
-            <Text style={styles.productPrice}>{item.price} ريال</Text>
-            <View style={styles.categoryTag}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+const StoreItem = ({ item, onPress }) => (
+    <TouchableOpacity style={styles.storeItem} onPress={onPress}>
+        <Image 
+            source={item.image ? { uri: item.image } : logo} 
+            style={styles.storeImage} 
+        />
+        <View style={styles.storeInfo}>
+            <Text style={styles.storeName}>{item.name}</Text>
+            <Text style={styles.storeAddress}>{item.address}</Text>
+            <Text style={styles.storeDescription}>{item.description}</Text>
+            <View style={styles.ratingContainer}>
+                <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
+                <Ionicons name="star" size={16} color={GREEN} />
             </View>
         </View>
     </TouchableOpacity>
 );
 
-export default function WholesaleStoreProductsScreen() {
+export default function WholesaleStoresScreen() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('الكل');
+    const [stores, setStores] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const categories = ['الكل', 'ملابس', 'أحذية', 'إكسسوارات', 'حقائب'];
+    useEffect(() => {
+        loadStores();
+    }, []);
 
-    const filteredProducts = products.filter(product =>
-        (selectedCategory === 'الكل' || product.category === selectedCategory) &&
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const loadStores = async () => {
+        try {
+            setLoading(true);
+            const { data } = await axios.get('/wholesale-stores');
+            setStores(data);
+        } catch (error) {
+            console.error('Error loading stores:', error);
+            setError('حدث خطأ في تحميل المتاجر');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredStores = stores.filter(store =>
+        store.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleStorePress = (store) => {
+        router.push({
+            pathname: "/trader/ProductScreen",
+            params: { id: store.id }
+        });
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={GREEN} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>منتجات الجملة</Text>
-                <Text style={styles.headerSubtitle}>اكتشف تشكيلتنا الواسعة من المنتجات</Text>
+                <Text style={styles.headerTitle}>متاجر الجملة</Text>
+                <Text style={styles.headerSubtitle}>اكتشف أفضل متاجر الجملة في مدينتك</Text>
             </View>
             <View style={styles.searchContainer}>
                 <Ionicons name="search-outline" size={24} color="#666666" style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="ابحث عن المنتجات"
+                    placeholder="ابحث عن المتاجر"
                     placeholderTextColor="#666666"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     textAlign="right"
                 />
             </View>
-            <View style={styles.categoriesContainer}>
+            {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+            ) : (
                 <FlatList
-                    data={categories}
+                    data={filteredStores}
                     renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[
-                                styles.categoryButton,
-                                selectedCategory === item && styles.selectedCategoryButton
-                            ]}
-                            onPress={() => setSelectedCategory(item)}
-                        >
-                            <Text style={[
-                                styles.categoryButtonText,
-                                selectedCategory === item && styles.selectedCategoryButtonText
-                            ]}>{item}</Text>
-                        </TouchableOpacity>
+                        <StoreItem 
+                            item={item} 
+                            onPress={() => handleStorePress(item)}
+                        />
                     )}
-                    keyExtractor={(item) => item}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={item => item.id.toString()}
+                    contentContainerStyle={styles.listContainer}
+                    refreshing={loading}
+                    onRefresh={loadStores}
                 />
-            </View>
-            <FlatList
-                data={filteredProducts}
-                renderItem={({ item }) => <ProductItem item={item} onPress={() => console.log('Product pressed:', item.name)} />}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.productList}
-                numColumns={2}
-                showsVerticalScrollIndicator={false}
-            />
+            )}
         </View>
     );
 }
@@ -157,78 +173,78 @@ const styles = StyleSheet.create({
         fontFamily: 'Arial',
         color: '#333333',
     },
-    categoriesContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 20,
+    listContainer: {
+        padding: 20,
     },
-    categoryButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
-        backgroundColor: '#F0F0F0',
-        marginRight: 10,
-    },
-    selectedCategoryButton: {
-        backgroundColor: GREEN,
-    },
-    categoryButtonText: {
-        color: '#333333',
-        fontFamily: 'Arial',
-        fontSize: 14,
-    },
-    selectedCategoryButtonText: {
-        color: '#FFFFFF',
-    },
-    productList: {
-        paddingHorizontal: 10,
-    },
-    productItem: {
-        flex: 1,
-        margin: 10,
+    storeItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
         backgroundColor: '#FFFFFF',
-        borderRadius: 15,
-        overflow: 'hidden',
-        elevation: 5,
+        borderRadius: 20,
+        marginBottom: 20,
+        padding: 20,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
         shadowOpacity: 0.1,
-        shadowRadius: 3.84,
+        shadowRadius: 4.65,
+        elevation: 6,
     },
-    productImage: {
-        width: '100%',
-        height: 150,
-        resizeMode: 'cover',
+    storeImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 15,
+        marginLeft: 20,
     },
-    productInfo: {
-        padding: 15,
+    storeInfo: {
+        flex: 1,
     },
-    productName: {
-        fontSize: 16,
+    storeName: {
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#333333',
+        marginBottom: 6,
         fontFamily: 'Arial',
-        marginBottom: 5,
         textAlign: 'right',
     },
-    productPrice: {
+    storeAddress: {
         fontSize: 14,
-        color: GREEN,
+        color: '#666666',
+        marginBottom: 8,
+        fontFamily: 'Arial',
+        textAlign: 'right',
+    },
+    storeDescription: {
+        fontSize: 14,
+        color: '#444444',
+        marginBottom: 10,
+        fontFamily: 'Arial',
+        lineHeight: 20,
+        textAlign: 'right',
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+    },
+    ratingText: {
+        fontSize: 14,
+        color: '#333333',
+        marginRight: 4,
         fontFamily: 'Arial',
         fontWeight: 'bold',
-        marginBottom: 5,
-        textAlign: 'right',
     },
-    categoryTag: {
-        backgroundColor: LIGHT_GREEN,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 10,
-        alignSelf: 'flex-end',
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    categoryText: {
-        color: GREEN,
-        fontSize: 12,
-        fontFamily: 'Arial',
+    errorText: {
+        color: '#FF3B30',
+        textAlign: 'center',
+        margin: 20,
     },
 });
 

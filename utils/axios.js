@@ -2,14 +2,14 @@ import axiosLib from "axios";
 import {getToken} from '../services/TokenService';
 
 const axios = axiosLib.create({
-    baseURL: 'https://lcqptxy2qt.sharedwithexpose.com/api',
+    baseURL: 'https://askhyvgctx.sharedwithexpose.com/api',
     headers: {
         Accept: 'application/json',
     },
 });
 
 axios.interceptors.request.use(async (req) => {
-    const token = getToken();
+    const token = await getToken();
 
     if (token != null) {
         req.headers["Authorization"] = `Bearer ${token}`;

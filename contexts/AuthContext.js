@@ -1,3 +1,8 @@
 import {createContext} from "react";
 
-export default createContext();
+const AuthContext = createContext({
+    user: null,
+    setUser: () => {},
+});
+
+export default AuthContext;
