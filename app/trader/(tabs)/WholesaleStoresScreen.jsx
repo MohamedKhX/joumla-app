@@ -75,10 +75,12 @@ export default function WholesaleStoresScreen() {
     );
 
     const handleStorePress = (store) => {
-        console.log(store.id)
         router.push({
             pathname: "/trader/ProductScreen",
-            params: { id: store.id }
+            params: { 
+                id: store.id,
+                storeName: store.name
+            }
         });
     };
 

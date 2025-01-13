@@ -23,26 +23,27 @@ I18nManager.forceRTL(true);
 
 const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
-const LIGHT_GREEN = '#E8FDF5';
 
 const ProductItem = ({ item, onAddToCart }) => (
     <View style={styles.productItem}>
-        <Image 
-            source={logo} 
-            style={styles.productImage}
-        />
-        <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.name}</Text>
-            <Text style={styles.productDescription}>{item.description}</Text>
-            <Text style={styles.productPrice}>{item.price} ريال</Text>
-            <TouchableOpacity 
-                style={styles.addToCartButton}
-                onPress={() => onAddToCart(item)}
-            >
-                <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.addToCartText}>إضافة للسلة</Text>
-            </TouchableOpacity>
+        <View style={styles.productHeader}>
+            <Image 
+                source={logo} 
+                style={styles.productImage}
+            />
+            <View style={styles.mainInfo}>
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productPrice}>{item.price} ريال</Text>
+            </View>
         </View>
+        <Text style={styles.productDescription}>{item.description}</Text>
+        <TouchableOpacity 
+            style={styles.addToCartButton}
+            onPress={() => onAddToCart(item)}
+        >
+            <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.addToCartText}>إضافة للسلة</Text>
+        </TouchableOpacity>
     </View>
 );
 
@@ -86,6 +87,16 @@ export default function ProductScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
+            <View style={styles.storeHeader}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                >
+                    <Ionicons name="arrow-forward" size={24} color={GREEN} />
+                </TouchableOpacity>
+                <Text style={styles.storeName}>{storeName}</Text>
+            </View>
+            
             {error ? (
                 <Text style={styles.errorText}>{error}</Text>
             ) : (
@@ -110,27 +121,36 @@ export default function ProductScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
-        paddingTop: 20,
+        backgroundColor: '#F5F5F5',
     },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    storeHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 15,
+        paddingTop: 50,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEEEEE',
     },
-    errorText: {
-        color: '#FF3B30',
+    backButton: {
+        padding: 5,
+    },
+    storeName: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333333',
         textAlign: 'center',
-        margin: 20,
+        marginRight: 40,
     },
     productsList: {
-        padding: 20,
+        padding: 15,
     },
     productItem: {
-        flexDirection: 'row',
         backgroundColor: '#FFFFFF',
         borderRadius: 15,
-        marginBottom: 20,
+        marginBottom: 15,
         padding: 15,
         shadowColor: "#000",
         shadowOffset: {
@@ -141,52 +161,63 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
     },
+    productHeader: {
+        flexDirection: 'row',
+        marginBottom: 10,
+    },
     productImage: {
-        width: 100,
-        height: 100,
+        width: 80,
+        height: 80,
         borderRadius: 10,
         marginLeft: 15,
     },
-    productInfo: {
+    mainInfo: {
         flex: 1,
+        justifyContent: 'center',
     },
     productName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#333333',
         marginBottom: 5,
-        fontFamily: 'Arial',
         textAlign: 'right',
     },
     productDescription: {
         fontSize: 14,
         color: '#666666',
-        marginBottom: 10,
-        fontFamily: 'Arial',
+        marginBottom: 15,
+        lineHeight: 20,
         textAlign: 'right',
     },
     productPrice: {
         fontSize: 16,
         fontWeight: 'bold',
         color: GREEN,
-        marginBottom: 10,
-        fontFamily: 'Arial',
         textAlign: 'right',
     },
     addToCartButton: {
         flexDirection: 'row',
         backgroundColor: GREEN,
         borderRadius: 8,
-        padding: 8,
+        padding: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     addToCartText: {
         color: '#FFFFFF',
-        marginRight: 5,
+        marginRight: 8,
         fontSize: 14,
         fontWeight: 'bold',
-        fontFamily: 'Arial',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        color: '#FF3B30',
+        textAlign: 'center',
+        margin: 20,
     },
 });
 
