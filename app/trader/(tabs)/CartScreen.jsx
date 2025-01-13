@@ -11,7 +11,7 @@ import {
     I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import logo from '../../assets/images/logo.webp';
+import logo from '../../../assets/images/logo.webp';
 
 // Force RTL layout
 I18nManager.forceRTL(true);

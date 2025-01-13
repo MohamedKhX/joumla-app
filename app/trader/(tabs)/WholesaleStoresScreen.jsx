@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {Link, router} from 'expo-router';
-import axios from '../../utils/axios';
-import logo from '../../assets/images/logo.webp'; // Keep the logo as fallback
+import axios from '../../../utils/axios';
+import logo from '../../../assets/images/logo.webp'; // Keep the logo as fallback
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -70,6 +70,7 @@ export default function WholesaleStoresScreen() {
     );
 
     const handleStorePress = (store) => {
+        console.log(store.id)
         router.push({
             pathname: "/trader/ProductScreen",
             params: { id: store.id }

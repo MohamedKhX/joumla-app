@@ -45,7 +45,7 @@ const ProductItem = ({ item, onAddToCart }) => (
     </View>
 );
 
-export default function ProductScreen() {
+export default function ProductScreenX() {
     const { storeId } = useLocalSearchParams();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
