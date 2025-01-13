@@ -1,17 +1,15 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {router, Tabs} from 'expo-router';
-import WholesaleStoresScreen from "../../../.expo";
-import CartScreen from "./CartScreen";
-import OrdersScreen from "./OrdersScreen";
-import NotificationsScreen from "./NotificationsScreen";
-import React, {useContext, useState} from "react";
-import AuthContext from "../../../contexts/AuthContext";
-import {logout} from "../../../services/AuthService";
-import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import {Ionicons} from "@expo/vector-icons";
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
+import { useContext, useState } from 'react';
+import { router } from 'expo-router';
+import AuthContext from '../../../contexts/AuthContext';
+import { logout } from '../../../services/AuthService';
+
+// Force RTL layout
+I18nManager.forceRTL(true);
 
 const GREEN = '#34D399';
-const LIGHT_GREEN = '#E8FDF5';
 
 const CustomHeader = ({ title }) => {
     const { setUser } = useContext(AuthContext);
@@ -19,7 +17,7 @@ const CustomHeader = ({ title }) => {
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
-
+        
         try {
             setIsLoggingOut(true);
             await logout();
@@ -34,59 +32,89 @@ const CustomHeader = ({ title }) => {
     };
 
     return (
-        <View style={styles.header}>
-            <Text style={styles.headerTitle}>{title}</Text>
-            <TouchableOpacity
-                onPress={handleLogout}
-                style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
-                disabled={isLoggingOut}
-            >
-                <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.logoutText}>
-                    {isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
-                </Text>
-            </TouchableOpacity>
+        <View style={styles.headerContainer}>
+            <View style={styles.header}>
+                <TouchableOpacity 
+                    onPress={handleLogout} 
+                    style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+                    disabled={isLoggingOut}
+                >
+                    <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+                    <Text style={styles.logoutText}>
+                        {isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
+                    </Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>{title}</Text>
+            </View>
         </View>
     );
 };
-export default function TabLayout() {
+
+export default function TabsLayout() {
     return (
-        <Tabs screenOptions={({ route }) => ({
-            tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-
-                if (route.name === 'WholesaleStore') {
-                    iconName = focused ? 'storefront' : 'storefront-outline';
-                } else if (route.name === 'Cart') {
-                    iconName = focused ? 'cart' : 'cart-outline';
-                } else if (route.name === 'Orders') {
-                    iconName = focused ? 'list' : 'list-outline';
-                } else if (route.name === 'Notifications') {
-                    iconName = focused ? 'notifications' : 'notifications-outline';
+        <Tabs
+            screenOptions={{
+                headerShown: true,
+                header: ({ route }) => (
+                    <CustomHeader
+                        title={
+                            route.name === 'WholesaleStoresScreen' ? 'المتاجر' :
+                            route.name === 'CartScreen' ? 'السلة' :
+                            route.name === 'OrdersScreen' ? 'الطلبات' :
+                            'الإشعارات'
+                        }
+                    />
+                ),
+                tabBarActiveTintColor: GREEN,
+                tabBarInactiveTintColor: '#757575',
+                tabBarStyle: {
+                    backgroundColor: '#FFFFFF',
+                    borderTopWidth: 1,
+                    borderTopColor: '#EEEEEE',
+                    height: 60,
+                    paddingBottom: 5,
+                    paddingTop: 5,
+                },
+                tabBarLabelStyle: {
+                    fontFamily: 'Arial',
+                    fontSize: 12,
                 }
-
-                return <Ionicons name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: GREEN,
-            tabBarInactiveTintColor: '#757575',
-            tabBarStyle: styles.tabBar,
-            tabBarLabelStyle: styles.tabBarLabel,
-            header: ({ route }) => (
-                <CustomHeader
-                    title={
-                        route.name === 'WholesaleStore' ? 'المتاجر' :
-                            route.name === 'Cart' ? 'السلة' :
-                                route.name === 'Orders' ? 'الطلبات' :
-                                    'الإشعارات'
-                    }
-                />
-            ),
-        })}>
+            }}
+        >
+            <Tabs.Screen
+                name="WholesaleStoresScreen"
+                options={{
+                    title: 'المتاجر',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="storefront-outline" size={size} color={color} />
+                    ),
+                }}
+            />
             <Tabs.Screen
                 name="CartScreen"
                 options={{
-                    title: 'Home',
-                    tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+                    title: 'السلة',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="cart-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="OrdersScreen"
+                options={{
+                    title: 'الطلبات',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="list-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="NotificationsScreen"
+                options={{
+                    title: 'الإشعارات',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="notifications-outline" size={size} color={color} />
+                    ),
                 }}
             />
         </Tabs>
@@ -94,42 +122,47 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-    tabBar: {
-        backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
-        height: 60,
-        paddingBottom: 5,
-        paddingTop: 5,
-    },
-    tabBarLabel: {
-        fontFamily: 'Arial',
-        fontSize: 12,
+    headerContainer: {
+        backgroundColor: GREEN,
+        paddingTop: 50,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     header: {
-        backgroundColor: GREEN,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 20,
-        paddingBottom: 20,
         paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     headerTitle: {
         color: '#FFFFFF',
         fontFamily: 'Arial',
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
+        textAlign: 'right',
     },
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
     },
     logoutText: {
         color: '#FFFFFF',
         fontFamily: 'Arial',
         fontSize: 16,
-        marginRight: 5,
+        marginRight: 8,
     },
     logoutButtonDisabled: {
         opacity: 0.7,
