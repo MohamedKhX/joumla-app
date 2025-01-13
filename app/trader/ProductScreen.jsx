@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import axios from '../../utils/axios';
 import logo from '../../assets/images/logo.webp';
+import { CartContext } from '../../contexts/CartContext';
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -45,8 +46,9 @@ const ProductItem = ({ item, onAddToCart }) => (
     </View>
 );
 
-export default function ProductScreenX() {
-    const { storeId } = useLocalSearchParams();
+export default function ProductScreen() {
+    const { id: storeId, storeName } = useLocalSearchParams();
+    const { addToCart } = useContext(CartContext);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -68,17 +70,9 @@ export default function ProductScreenX() {
         }
     };
 
-    const handleAddToCart = async (product) => {
-        try {
-            await axios.post('/cart/add', {
-                product_id: product.id,
-                quantity: 1
-            });
-            Alert.alert('نجاح', 'تمت إضافة المنتج إلى السلة');
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            Alert.alert('خطأ', 'حدث خطأ في إضافة المنتج إلى السلة');
-        }
+    const handleAddToCart = (product) => {
+        addToCart(storeId, storeName, product);
+        Alert.alert('نجاح', 'تمت إضافة المنتج إلى السلة');
     };
 
     if (loading) {
@@ -92,16 +86,6 @@ export default function ProductScreenX() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>المنتجات</Text>
-            </View>
-            
             {error ? (
                 <Text style={styles.errorText}>{error}</Text>
             ) : (
@@ -127,26 +111,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: GREEN,
-        paddingTop: 50,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-    },
-    backButton: {
-        padding: 5,
-    },
-    headerTitle: {
-        flex: 1,
-        color: '#FFFFFF',
-        fontSize: 20,
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
-        textAlign: 'center',
-        marginRight: 40,
+        paddingTop: 20,
     },
     loadingContainer: {
         flex: 1,

@@ -39,12 +39,11 @@ const CustomHeader = ({ title }) => {
                     style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
                     disabled={isLoggingOut}
                 >
-                    <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+                    <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
                     <Text style={styles.logoutText}>
-                        {isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
+                        {isLoggingOut ? 'جاري...' : 'خروج'}
                     </Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{title}</Text>
             </View>
         </View>
     );
@@ -124,9 +123,7 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
     headerContainer: {
         backgroundColor: GREEN,
-        paddingTop: 50,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        paddingTop: 10,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -140,13 +137,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingHorizontal: 15,
+        paddingBottom: 10,
     },
     headerTitle: {
         color: '#FFFFFF',
         fontFamily: 'Arial',
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'right',
     },
@@ -154,15 +151,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 15,
     },
     logoutText: {
         color: '#FFFFFF',
         fontFamily: 'Arial',
-        fontSize: 16,
-        marginRight: 8,
+        fontSize: 14,
+        marginRight: 5,
     },
     logoutButtonDisabled: {
         opacity: 0.7,

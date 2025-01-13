@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     View,
     Text,
@@ -11,11 +11,14 @@ import {
     I18nManager,
     TextInput,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {Link, router} from 'expo-router';
+import { router } from 'expo-router';
 import axios from '../../../utils/axios';
-import logo from '../../../assets/images/logo.webp'; // Keep the logo as fallback
+import logo from '../../../assets/images/logo.webp';
+import AuthContext from '../../../contexts/AuthContext';
+import { logout } from '../../../services/AuthService';
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -43,10 +46,12 @@ const StoreItem = ({ item, onPress }) => (
 );
 
 export default function WholesaleStoresScreen() {
+    const { setUser } = useContext(AuthContext);
     const [searchQuery, setSearchQuery] = useState('');
     const [stores, setStores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     useEffect(() => {
         loadStores();
@@ -89,7 +94,10 @@ export default function WholesaleStoresScreen() {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>متاجر الجملة</Text>
+                <View style={styles.headerTop}>
+
+                    <Text style={styles.headerTitle}>متاجر الجملة</Text>
+                </View>
                 <Text style={styles.headerSubtitle}>اكتشف أفضل متاجر الجملة في مدينتك</Text>
             </View>
             <View style={styles.searchContainer}>
@@ -246,6 +254,29 @@ const styles = StyleSheet.create({
         color: '#FF3B30',
         textAlign: 'center',
         margin: 20,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    logoutText: {
+        color: '#FFFFFF',
+        fontFamily: 'Arial',
+        fontSize: 16,
+        marginRight: 8,
+    },
+    logoutButtonDisabled: {
+        opacity: 0.7,
     },
 });
 

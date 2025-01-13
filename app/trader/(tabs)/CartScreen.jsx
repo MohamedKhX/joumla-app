@@ -1,258 +1,143 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
-    Image,
+    FlatList,
     TouchableOpacity,
-    Dimensions,
-    StatusBar,
-    I18nManager,
+    Image,
 } from 'react-native';
+import { CartContext } from '../../../contexts/CartContext';
 import { Ionicons } from '@expo/vector-icons';
 import logo from '../../../assets/images/logo.webp';
 
-// Force RTL layout
-I18nManager.forceRTL(true);
-
-const { width } = Dimensions.get('window');
 const GREEN = '#34D399';
-const LIGHT_GREEN = '#E8FDF5';
 
-// Sample cart data
-const cartData = [
-    {
-        storeName: 'متجر الجملة الأول',
-        items: [
-            { id: '1', name: 'قميص قطني', price: 45, quantity: 2, image: logo },
-            { id: '2', name: 'بنطلون جينز', price: 60, quantity: 1, image: logo },
-        ],
-    },
-    {
-        storeName: 'سوق الجملة الكبير',
-        items: [
-            { id: '3', name: 'حذاء رياضي', price: 80, quantity: 1, image: logo },
-            { id: '4', name: 'حقيبة ظهر', price: 55, quantity: 3, image: logo },
-        ],
-    },
-];
-
-const CartItem = ({ item, onIncrement, onDecrement, onRemove }) => (
+const CartItem = ({ item, onRemove }) => (
     <View style={styles.cartItem}>
-        <Image source={ item.image } style={styles.itemImage} />
-        <View style={styles.itemInfo}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>{item.price} ريال</Text>
-            <View style={styles.quantityContainer}>
-                <TouchableOpacity onPress={onDecrement} style={styles.quantityButton}>
-                    <Ionicons name="remove" size={20} color={GREEN} />
-                </TouchableOpacity>
-                <Text style={styles.quantityText}>{item.quantity}</Text>
-                <TouchableOpacity onPress={onIncrement} style={styles.quantityButton}>
-                    <Ionicons name="add" size={20} color={GREEN} />
-                </TouchableOpacity>
-            </View>
+        <Image source={logo} style={styles.productImage} />
+        <View style={styles.productInfo}>
+            <Text style={styles.productName}>{item.product.name}</Text>
+            <Text style={styles.productPrice}>{item.product.price} ريال</Text>
+            <Text style={styles.quantity}>الكمية: {item.quantity}</Text>
         </View>
         <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            <Ionicons name="trash-outline" size={24} color="#FF4444" />
         </TouchableOpacity>
     </View>
 );
 
+const StoreSection = ({ storeId, storeData, onRemoveItem }) => (
+    <View style={styles.storeSection}>
+        <Text style={styles.storeName}>{storeData.storeName}</Text>
+        <FlatList
+            data={storeData.products}
+            renderItem={({ item }) => (
+                <CartItem
+                    item={item}
+                    onRemove={() => onRemoveItem(storeId, item.product.id)}
+                />
+            )}
+            keyExtractor={item => item.product.id.toString()}
+        />
+    </View>
+);
+
 export default function CartScreen() {
-    const [cart, setCart] = useState(cartData);
+    const { cart, removeFromCart, clearCart } = useContext(CartContext);
+    const stores = Object.entries(cart);
 
-    const handleIncrement = (storeIndex, itemId) => {
-        const newCart = [...cart];
-        const item = newCart[storeIndex].items.find(i => i.id === itemId);
-        if (item) item.quantity += 1;
-        setCart(newCart);
-    };
-
-    const handleDecrement = (storeIndex, itemId) => {
-        const newCart = [...cart];
-        const item = newCart[storeIndex].items.find(i => i.id === itemId);
-        if (item && item.quantity > 1) item.quantity -= 1;
-        setCart(newCart);
-    };
-
-    const handleRemove = (storeIndex, itemId) => {
-        const newCart = [...cart];
-        newCart[storeIndex].items = newCart[storeIndex].items.filter(i => i.id !== itemId);
-        if (newCart[storeIndex].items.length === 0) {
-            newCart.splice(storeIndex, 1);
-        }
-        setCart(newCart);
-    };
-
-    const calculateTotal = () => {
-        return cart.reduce((total, store) => {
-            return total + store.items.reduce((storeTotal, item) => {
-                return storeTotal + item.price * item.quantity;
-            }, 0);
-        }, 0);
-    };
+    if (stores.length === 0) {
+        return (
+            <View style={styles.emptyContainer}>
+                <Ionicons name="cart-outline" size={64} color={GREEN} />
+                <Text style={styles.emptyText}>السلة فارغة</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>سلة التسوق</Text>
-            </View>
-            <ScrollView style={styles.cartContainer}>
-                {cart.map((store, storeIndex) => (
-                    <View key={store.storeName} style={styles.storeSection}>
-                        <Text style={styles.storeName}>{store.storeName}</Text>
-                        {store.items.map(item => (
-                            <CartItem
-                                key={item.id}
-                                item={item}
-                                onIncrement={() => handleIncrement(storeIndex, item.id)}
-                                onDecrement={() => handleDecrement(storeIndex, item.id)}
-                                onRemove={() => handleRemove(storeIndex, item.id)}
-                            />
-                        ))}
-                    </View>
-                ))}
-            </ScrollView>
-            <View style={styles.totalContainer}>
-                <Text style={styles.totalText}>الإجمالي:</Text>
-                <Text style={styles.totalAmount}>{calculateTotal()} ريال</Text>
-            </View>
-            <TouchableOpacity style={styles.checkoutButton}>
-                <Text style={styles.checkoutButtonText}>إتمام الشراء</Text>
-            </TouchableOpacity>
-        </View>
+        <FlatList
+            data={stores}
+            renderItem={({ item: [storeId, storeData] }) => (
+                <StoreSection
+                    storeId={storeId}
+                    storeData={storeData}
+                    onRemoveItem={removeFromCart}
+                />
+            )}
+            keyExtractor={([storeId]) => storeId}
+            contentContainerStyle={styles.container}
+        />
     );
 }
 
 const styles = StyleSheet.create({
     container: {
+        padding: 16,
+    },
+    emptyContainer: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
-    header: {
-        backgroundColor: GREEN,
-        paddingTop: 50,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-    },
-    headerTitle: {
-        color: '#FFFFFF',
-        fontSize: 24,
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
-        textAlign: 'center',
-    },
-    cartContainer: {
-        flex: 1,
-        padding: 20,
-    },
-    storeSection: {
-        marginBottom: 20,
-        backgroundColor: LIGHT_GREEN,
-        borderRadius: 15,
-        padding: 15,
-    },
-    storeName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
-        marginBottom: 10,
-        textAlign: 'right',
-    },
-    cartItem: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
-        padding: 10,
-        marginBottom: 10,
-        alignItems: 'center',
-    },
-    itemImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginLeft: 10,
-    },
-    itemInfo: {
-        flex: 1,
-    },
-    itemName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
-        marginBottom: 5,
-        textAlign: 'right',
-    },
-    itemPrice: {
-        fontSize: 14,
-        color: GREEN,
-        fontFamily: 'Arial',
-        marginBottom: 5,
-        textAlign: 'right',
-    },
-    quantityContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-    },
-    quantityButton: {
-        backgroundColor: LIGHT_GREEN,
-        borderRadius: 15,
-        width: 30,
-        height: 30,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    quantityText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
-        marginHorizontal: 10,
-    },
-    removeButton: {
-        padding: 5,
-    },
-    totalContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
-    },
-    totalText: {
+    emptyText: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
+        color: '#666',
+        marginTop: 16,
     },
-    totalAmount: {
+    storeSection: {
+        marginBottom: 24,
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    storeName: {
         fontSize: 20,
         fontWeight: 'bold',
+        marginBottom: 16,
         color: GREEN,
-        fontFamily: 'Arial',
     },
-    checkoutButton: {
-        backgroundColor: GREEN,
-        margin: 20,
-        paddingVertical: 15,
-        borderRadius: 25,
+    cartItem: {
+        flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEE',
     },
-    checkoutButtonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
+    productImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginRight: 12,
+    },
+    productInfo: {
+        flex: 1,
+    },
+    productName: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    productPrice: {
+        fontSize: 14,
+        color: GREEN,
+        marginTop: 4,
+    },
+    quantity: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    removeButton: {
+        padding: 8,
     },
 });
 
