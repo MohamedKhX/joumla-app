@@ -12,6 +12,7 @@ import WholesaleStoresScreen from './(tabs)/WholesaleStoresScreen';
 import CartScreen from './(tabs)/CartScreen';
 import OrdersScreen from './(tabs)/OrdersScreen';
 import NotificationsScreen from './(tabs)/NotificationsScreen';
+import {CartProvider} from "../../contexts/CartContext";
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -23,10 +24,12 @@ const LIGHT_GREEN = '#E8FDF5';
 
 export default function Layout() {
     return (
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="ProductScreen" />
-        </Stack>
+        <CartProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="ProductScreen" />
+            </Stack>
+        </CartProvider>
     );
 }
 

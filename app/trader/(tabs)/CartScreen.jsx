@@ -6,6 +6,7 @@ import {
     FlatList,
     TouchableOpacity,
     Image,
+    ScrollView,
 } from 'react-native';
 import { CartContext } from '../../../contexts/CartContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,37 +16,45 @@ const GREEN = '#34D399';
 
 const CartItem = ({ item, onRemove }) => (
     <View style={styles.cartItem}>
-        <Image source={logo} style={styles.productImage} />
+        <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+            <Ionicons name="trash-outline" size={24} color="#FF4444" />
+        </TouchableOpacity>
         <View style={styles.productInfo}>
             <Text style={styles.productName}>{item.product.name}</Text>
             <Text style={styles.productPrice}>{item.product.price} ريال</Text>
             <Text style={styles.quantity}>الكمية: {item.quantity}</Text>
         </View>
-        <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
-            <Ionicons name="trash-outline" size={24} color="#FF4444" />
-        </TouchableOpacity>
+        <Image source={logo} style={styles.productImage} />
     </View>
 );
 
 const StoreSection = ({ storeId, storeData, onRemoveItem }) => (
     <View style={styles.storeSection}>
         <Text style={styles.storeName}>{storeData.storeName}</Text>
-        <FlatList
-            data={storeData.products}
-            renderItem={({ item }) => (
-                <CartItem
-                    item={item}
-                    onRemove={() => onRemoveItem(storeId, item.product.id)}
-                />
-            )}
-            keyExtractor={item => item.product.id.toString()}
-        />
+        {storeData.products.map((item) => (
+            <CartItem
+                key={item.product.id}
+                item={item}
+                onRemove={() => onRemoveItem(storeId, item.product.id)}
+            />
+        ))}
+        <View style={styles.storeTotalContainer}>
+            <Text style={styles.storeTotalText}>
+                المجموع: {storeData.products.reduce((total, item) => 
+                    total + (parseFloat(item.product.price) * item.quantity), 0
+                ).toFixed(2)} ريال
+            </Text>
+        </View>
     </View>
 );
 
 export default function CartScreen() {
-    const { cart, removeFromCart, clearCart } = useContext(CartContext);
+    const cartContext = useContext(CartContext);
+    const { cart, removeFromCart, clearCart } = cartContext;
+    console.log('Cart Screen - Current cart:', cart); // Debug log
+    
     const stores = Object.entries(cart);
+    console.log('Stores in cart:', stores); // Debug log
 
     if (stores.length === 0) {
         return (
@@ -56,41 +65,61 @@ export default function CartScreen() {
         );
     }
 
+    const totalAmount = stores.reduce((total, [_, storeData]) => 
+        total + storeData.products.reduce((storeTotal, item) => 
+            storeTotal + (parseFloat(item.product.price) * item.quantity), 0
+        ), 0
+    );
+
     return (
-        <FlatList
-            data={stores}
-            renderItem={({ item: [storeId, storeData] }) => (
-                <StoreSection
-                    storeId={storeId}
-                    storeData={storeData}
-                    onRemoveItem={removeFromCart}
-                />
-            )}
-            keyExtractor={([storeId]) => storeId}
-            contentContainerStyle={styles.container}
-        />
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                {stores.map(([storeId, storeData]) => (
+                    <StoreSection
+                        key={storeId}
+                        storeId={storeId}
+                        storeData={storeData}
+                        onRemoveItem={removeFromCart}
+                    />
+                ))}
+            </ScrollView>
+            <View style={styles.footer}>
+                <Text style={styles.totalAmount}>
+                    المجموع الكلي: {totalAmount.toFixed(2)} ريال
+                </Text>
+                <TouchableOpacity style={styles.checkoutButton}>
+                    <Text style={styles.checkoutButtonText}>إتمام الطلب</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+    },
+    scrollContent: {
+        padding: 15,
+        paddingBottom: 100,
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
     },
     emptyText: {
         fontSize: 18,
-        color: '#666',
+        color: '#666666',
         marginTop: 16,
     },
     storeSection: {
-        marginBottom: 24,
-        backgroundColor: '#FFF',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -101,30 +130,34 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     storeName: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 16,
         color: GREEN,
+        marginBottom: 15,
+        textAlign: 'right',
     },
     cartItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
+        borderBottomColor: '#EEEEEE',
     },
     productImage: {
         width: 60,
         height: 60,
         borderRadius: 8,
-        marginRight: 12,
     },
     productInfo: {
         flex: 1,
+        marginHorizontal: 15,
+        alignItems: 'flex-end',
     },
     productName: {
         fontSize: 16,
         fontWeight: '500',
+        color: '#333333',
+        textAlign: 'right',
     },
     productPrice: {
         fontSize: 14,
@@ -133,11 +166,51 @@ const styles = StyleSheet.create({
     },
     quantity: {
         fontSize: 14,
-        color: '#666',
+        color: '#666666',
         marginTop: 4,
     },
     removeButton: {
-        padding: 8,
+        padding: 5,
+    },
+    storeTotalContainer: {
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#EEEEEE',
+    },
+    storeTotalText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333333',
+        textAlign: 'right',
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        padding: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#EEEEEE',
+    },
+    totalAmount: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333333',
+        textAlign: 'right',
+        marginBottom: 10,
+    },
+    checkoutButton: {
+        backgroundColor: GREEN,
+        borderRadius: 8,
+        padding: 15,
+        alignItems: 'center',
+    },
+    checkoutButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
 

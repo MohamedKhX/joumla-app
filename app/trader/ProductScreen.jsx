@@ -49,7 +49,13 @@ const ProductItem = ({ item, onAddToCart }) => (
 
 export default function ProductScreen() {
     const { id: storeId, storeName } = useLocalSearchParams();
-    const { addToCart } = useContext(CartContext);
+    const cartContext = useContext(CartContext);
+    const { addToCart } = cartContext;
+
+    // Add debug log
+    console.log('Cart Context:', cartContext);
+    console.log('Store params:', { storeId, storeName });
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -72,7 +78,7 @@ export default function ProductScreen() {
     };
 
     const handleAddToCart = (product) => {
-        addToCart(storeId, storeName, product);
+        addToCart(storeId, storeName, product)
         Alert.alert('نجاح', 'تمت إضافة المنتج إلى السلة');
     };
 

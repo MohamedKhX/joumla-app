@@ -8,35 +8,38 @@ export const CartContext = createContext({
 });
 
 export function CartProvider({ children }) {
-    // Structure: { storeId: { storeName: string, products: [{ product, quantity }] } }
     const [cart, setCart] = useState({});
-
     const addToCart = (storeId, storeName, product) => {
+        if (!storeId || !storeName || !product) {
+            console.error('Missing required parameters:', { storeId, storeName, product });
+            return;
+        }
+
         setCart(prevCart => {
+            console.log('Previous cart:', prevCart); // Debug log
             const storeCart = prevCart[storeId] || { storeName, products: [] };
             const existingProduct = storeCart.products.find(item => item.product.id === product.id);
 
-            if (existingProduct) {
-                // Update quantity if product exists
-                const updatedProducts = storeCart.products.map(item =>
-                    item.product.id === product.id
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item
-                );
-                return {
-                    ...prevCart,
-                    [storeId]: { ...storeCart, products: updatedProducts }
-                };
-            } else {
-                // Add new product
-                return {
-                    ...prevCart,
-                    [storeId]: {
-                        ...storeCart,
-                        products: [...storeCart.products, { product, quantity: 1 }]
-                    }
-                };
-            }
+            const newCart = existingProduct ? {
+                ...prevCart,
+                [storeId]: {
+                    ...storeCart,
+                    products: storeCart.products.map(item =>
+                        item.product.id === product.id
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item
+                    )
+                }
+            } : {
+                ...prevCart,
+                [storeId]: {
+                    ...storeCart,
+                    products: [...storeCart.products, { product, quantity: 1 }]
+                }
+            };
+
+            console.log('New cart:', newCart); // Debug log
+            return newCart;
         });
     };
 
@@ -60,6 +63,7 @@ export function CartProvider({ children }) {
     };
 
     const clearCart = () => {
+        console.log('asdfasdf')
         setCart({});
     };
 

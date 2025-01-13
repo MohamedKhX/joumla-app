@@ -18,12 +18,10 @@ export default function () {
             } catch (e) {
                 console.error('Error to get user', e);
             }
-
             setStatus('idle');
         }
-
         runEffect();
-    }, [])
+    }, []);
 
     if (status === 'loading') {
         return <SplashScreen/>;
@@ -31,13 +29,11 @@ export default function () {
 
     return (
         <AuthContext.Provider value={{user, setUser}}>
-            <CartProvider>
-                {!user ? (
-                    <Redirect href="/auth/LoginScreen"/>
-                ) : (
-                    <Redirect href="/trader"/>
-                )}
-            </CartProvider>
-        </AuthContext.Provider>
-    )
+            {!user ? (
+                <Redirect href="/auth/LoginScreen"/>
+            ) : (
+                <Redirect href="/trader"/>
+            )}
+       </AuthContext.Provider>
+    );
 }

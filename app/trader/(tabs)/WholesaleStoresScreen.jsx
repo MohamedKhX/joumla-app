@@ -75,6 +75,7 @@ export default function WholesaleStoresScreen() {
     );
 
     const handleStorePress = (store) => {
+        console.log('Navigating to store:', store);
         router.push({
             pathname: "/trader/ProductScreen",
             params: { 
