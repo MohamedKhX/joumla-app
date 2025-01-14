@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, I18nManager, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useContext } from 'react';
 import {router, Stack} from 'expo-router';
 import AuthContext from '../../contexts/AuthContext';
-import { logout } from '../../services/AuthService';
+import {loadUser, logout} from '../../services/AuthService';
 import { Tabs } from 'expo-router';
 
 import WholesaleStoresScreen from './(tabs)/WholesaleStoresScreen';
@@ -23,13 +23,30 @@ const LIGHT_GREEN = '#E8FDF5';
 
 
 export default function Layout() {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        async function runEffect() {
+            try {
+                const userData = await loadUser();
+                setUser(userData);
+            } catch (e) {
+                setUser(null);
+            }
+        }
+
+        runEffect();
+    }, []);
+    
     return (
-        <CartProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="ProductScreen" />
-            </Stack>
-        </CartProvider>
+        <AuthContext.Provider value={{user, setUser}}>
+            <CartProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="ProductScreen" />
+                </Stack>
+            </CartProvider>
+        </AuthContext.Provider>
     );
 }
 

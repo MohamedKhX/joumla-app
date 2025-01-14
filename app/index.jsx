@@ -7,19 +7,23 @@ import AuthContext from "../contexts/AuthContext";
 import { CartProvider } from '../contexts/CartContext';
 
 export default function () {
-    const [user, setUser] = useState();
+    const [user, setUser] = useState(null);
     const [status, setStatus] = useState('loading');
 
     useEffect(() => {
         async function runEffect() {
             try {
-                const user = await loadUser();
-                setUser(user);
+                const userData = await loadUser();
+                console.log('Loaded user data:', userData); // Debug log
+                setUser(userData);
             } catch (e) {
-                console.error('Error to get user', e);
+                console.error('Error loading user:', e);
+                setUser(null);
+            } finally {
+                setStatus('idle');
             }
-            setStatus('idle');
         }
+
         runEffect();
     }, []);
 

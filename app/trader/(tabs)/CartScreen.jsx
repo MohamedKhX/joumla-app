@@ -128,9 +128,9 @@ export default function CartScreen() {
                 }))
             }));
 
-            // Submit order
+            // Submit order with user.trader_id instead of user.id
             await axios.post('/trader/orders', {
-                trader_id: user.id,
+                trader_id: user.trader.id,
                 orders: orders
             });
 
@@ -146,9 +146,15 @@ export default function CartScreen() {
 
         } catch (error) {
             console.error('Order submission error:', error);
+            let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
+            
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            
             Alert.alert(
                 'خطأ',
-                'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى',
+                errorMessage,
                 [{ text: 'حسناً', style: 'default' }]
             );
         } finally {

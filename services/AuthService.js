@@ -21,6 +21,7 @@ export async function login(credentials) {
 export async function loadUser() {
     try {
         const {data: user} = await axios.get('/user');
+        console.log('User data from API:', user);
         return user;
     } catch (error) {
         console.error('Load user error:', error.response?.data || error.message);

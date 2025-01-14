@@ -12,7 +12,7 @@ I18nManager.forceRTL(true);
 const GREEN = '#34D399';
 
 const CustomHeader = ({ title }) => {
-    const { setUser } = useContext(AuthContext);
+    const { user, setUser } = useContext(AuthContext);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = async () => {
