@@ -35,7 +35,7 @@ const OrderItem = ({ item }) => (
         <Image source={{ uri: item.image }} style={styles.itemImage} />
         <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>{item.price} ريال</Text>
+            <Text style={styles.itemPrice}>{item.price} دينار</Text>
             <Text style={styles.itemQuantity}>الكمية: {item.quantity}</Text>
         </View>
     </View>
@@ -69,7 +69,7 @@ export default function OrderDetailsScreen() {
                 </View>
                 <View style={styles.totalContainer}>
                     <Text style={styles.totalLabel}>الإجمالي:</Text>
-                    <Text style={styles.totalAmount}>{order.total} ريال</Text>
+                    <Text style={styles.totalAmount}>{order.total} دينار</Text>
                 </View>
             </ScrollView>
         </View>

@@ -2,7 +2,7 @@ import axiosLib from "axios";
 import {getToken} from '../services/TokenService';
 
 const axios = axiosLib.create({
-    baseURL: 'https://gjeejvtkjo.sharedwithexpose.com/api',
+    baseURL: 'https://zvzmmx37yn.sharedwithexpose.com/api',
     headers: {
         Accept: 'application/json',
     },

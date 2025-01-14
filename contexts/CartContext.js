@@ -4,6 +4,7 @@ export const CartContext = createContext({
     cart: {},
     addToCart: () => {},
     removeFromCart: () => {},
+    updateQuantity: () => {},
     clearCart: () => {},
 });
 
@@ -62,13 +63,38 @@ export function CartProvider({ children }) {
         });
     };
 
+    const updateQuantity = (storeId, productId, newQuantity) => {
+        setCart(prevCart => {
+            const storeCart = prevCart[storeId];
+            if (!storeCart) return prevCart;
+
+            return {
+                ...prevCart,
+                [storeId]: {
+                    ...storeCart,
+                    products: storeCart.products.map(item =>
+                        item.product.id === productId
+                            ? { ...item, quantity: newQuantity }
+                            : item
+                    )
+                }
+            };
+        });
+    };
+
     const clearCart = () => {
         console.log('asdfasdf')
         setCart({});
     };
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
+        <CartContext.Provider value={{ 
+            cart, 
+            addToCart, 
+            removeFromCart, 
+            updateQuantity,
+            clearCart 
+        }}>
             {children}
         </CartContext.Provider>
     );

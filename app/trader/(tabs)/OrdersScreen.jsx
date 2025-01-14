@@ -47,7 +47,7 @@ const OrderItem = ({ order, onPress }) => (
             <Text style={styles.orderNumber}>طلب رقم #{order.id}</Text>
         </View>
         <View style={styles.orderDetails}>
-            <Text style={styles.orderTotal}>{order.total} ريال</Text>
+            <Text style={styles.orderTotal}>{order.total} دينار</Text>
             <Text style={styles.orderItemsCount}>{order.items} منتجات</Text>
         </View>
         <View style={styles.orderStatus}>

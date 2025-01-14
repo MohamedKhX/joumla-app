@@ -33,7 +33,7 @@ const ProductItem = ({ item, onAddToCart }) => (
             />
             <View style={styles.mainInfo}>
                 <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productPrice}>{item.price} ريال</Text>
+                <Text style={styles.productPrice}>{item.price} دينار</Text>
             </View>
         </View>
         <Text style={styles.productDescription}>{item.description}</Text>
