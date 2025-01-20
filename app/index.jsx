@@ -35,9 +35,11 @@ export default function () {
         <AuthContext.Provider value={{user, setUser}}>
             {!user ? (
                 <Redirect href="/auth/LoginScreen"/>
+            ) : user.type === 'Driver' ? (
+                <Redirect href="/driver"/>
             ) : (
                 <Redirect href="/trader"/>
             )}
-       </AuthContext.Provider>
+        </AuthContext.Provider>
     );
 }

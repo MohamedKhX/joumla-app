@@ -39,7 +39,7 @@ export default function LoginScreen() {
         try {
             console.log('Attempting login with:', { email, password });
             
-            await login({
+            const response = await login({
                 email,
                 password,
                 device_name: `${Platform.OS} ${Platform.Version}`,
@@ -48,9 +48,31 @@ export default function LoginScreen() {
             console.log('Login successful, loading user...');
             const user = await loadUser();
             console.log('User loaded:', user);
-            
-            setUser(user);
-            router.replace('/trader');
+
+            // Check user type and active status
+            if (user.type === 'Trader') {
+                if (!user.trader?.is_active) {
+                    setError('حسابك قيد المراجعة. سيتم إخطارك عند تفعيل حسابك.');
+                    setLoading(false);
+                    return;
+                }
+                setUser(user);
+                router.replace('/trader');
+            } 
+            else if (user.type === 'Driver') {
+                if (!user.is_active) {
+                    setError('حسابك قيد المراجعة. سيتم إخطارك عند تفعيل حسابك.');
+                    setLoading(false);
+                    return;
+                }
+                setUser(user);
+                router.replace('/driver');
+            } 
+            else {
+                setError('بيانات الاعتماد غير صحيحة. يرجى التحقق من حسابك.');
+                setLoading(false);
+                return;
+            }
         } catch (e) {
             console.error('Login error:', e.response?.data || e.message);
             if(e.response?.status === 422) {
