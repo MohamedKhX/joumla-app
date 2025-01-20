@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     View,
     Text,
@@ -7,8 +7,14 @@ import {
     TouchableOpacity,
     StatusBar,
     I18nManager,
+    ActivityIndicator,
+    Animated,
+    RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import AuthContext from '../../../contexts/AuthContext';
+import axios from '../../../utils/axios';
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -16,82 +22,158 @@ I18nManager.forceRTL(true);
 const GREEN = '#34D399';
 const LIGHT_GREEN = '#E8FDF5';
 
-// Sample notifications data
-const notificationsScreen = [
-    { id: '1', type: 'order', title: 'تم شحن طلبك', message: 'تم شحن طلبك رقم #1234. من المتوقع وصوله خلال 3-5 أيام.', time: '2 ساعة', read: false },
-    { id: '2', type: 'promo', title: 'عرض خاص', message: 'خصم 20% على جميع المنتجات لمدة 24 ساعة فقط!', time: '5 ساعات', read: true },
-    { id: '3', type: 'stock', title: 'إعادة تخزين', message: 'تم إعادة تخزين المنتج "قميص قطني" الذي كنت تنتظره.', time: '1 يوم', read: false },
-    { id: '4', type: 'payment', title: 'تم استلام الدفعة', message: 'تم استلام دفعتك بنجاح لطلبك رقم #5678.', time: '2 يوم', read: true },
-    { id: '5', type: 'order', title: 'تم تسليم طلبك', message: 'تم تسليم طلبك رقم #9012 بنجاح. نتمنى أن تستمتع بمشترياتك!', time: '3 أيام', read: true },
-];
+const NotificationItem = ({ item, onPress }) => {
+    const [animatedValue] = useState(new Animated.Value(0));
+    
+    useEffect(() => {
+        Animated.spring(animatedValue, {
+            toValue: 1,
+            tension: 20,
+            friction: 7,
+            useNativeDriver: true,
+        }).start();
+    }, []);
 
-const getIconName = (type) => {
-    switch (type) {
-        case 'order':
-            return 'cube-outline';
-        case 'promo':
-            return 'pricetag-outline';
-        case 'stock':
-            return 'archive-outline';
-        case 'payment':
-            return 'card-outline';
-        default:
-            return 'notifications-outline';
-    }
+    const getNotificationIcon = (title) => {
+        if (title.includes('طلب') || title.includes('order')) return 'cube-outline';
+        if (title.includes('دفع') || title.includes('payment')) return 'card-outline';
+        if (title.includes('شحن') || title.includes('shipping')) return 'truck-outline';
+        if (title.includes('تحديث') || title.includes('update')) return 'refresh-outline';
+        return 'notifications-outline';
+    };
+
+    const getTimeAgo = (dateString) => {
+        const now = new Date();
+        const date = new Date(dateString);
+        const seconds = Math.floor((now - date) / 1000);
+        
+        let interval = seconds / 31536000;
+        if (interval > 1) return `${Math.floor(interval)} سنة`;
+        
+        interval = seconds / 2592000;
+        if (interval > 1) return `${Math.floor(interval)} شهر`;
+        
+        interval = seconds / 86400;
+        if (interval > 1) return `${Math.floor(interval)} يوم`;
+        
+        interval = seconds / 3600;
+        if (interval > 1) return `${Math.floor(interval)} ساعة`;
+        
+        interval = seconds / 60;
+        if (interval > 1) return `${Math.floor(interval)} دقيقة`;
+        
+        return 'الآن';
+    };
+
+    return (
+        <Animated.View style={[
+            styles.notificationItem,
+            {
+                transform: [
+                    { scale: animatedValue },
+                    {
+                        translateY: animatedValue.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [50, 0],
+                        }),
+                    },
+                ],
+                opacity: animatedValue,
+            },
+        ]}>
+            <LinearGradient
+                colors={[GREEN + '10', GREEN + '05']}
+                style={styles.notificationContent}
+            >
+                <View style={styles.iconContainer}>
+                    <Ionicons 
+                        name={getNotificationIcon(item.title)} 
+                        size={24} 
+                        color={GREEN} 
+                    />
+                </View>
+                <View style={styles.textContainer}>
+                    <Text style={styles.notificationTitle}>{item.title}</Text>
+                    <Text style={styles.notificationBody}>{item.body}</Text>
+                    <Text style={styles.timeAgo}>{getTimeAgo(item.created_at)}</Text>
+                </View>
+            </LinearGradient>
+        </Animated.View>
+    );
 };
 
-const NotificationItem = ({ item, onPress }) => (
-    <TouchableOpacity style={[styles.notificationItem, !item.read && styles.unreadNotification]} onPress={onPress}>
-        <View style={styles.iconContainer}>
-            <Ionicons name={getIconName(item.type)} size={24} color={GREEN} />
-        </View>
-        <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle}>{item.title}</Text>
-            <Text style={styles.notificationMessage}>{item.message}</Text>
-            <Text style={styles.notificationTime}>{item.time}</Text>
-        </View>
-        {!item.read && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
-);
-
 export default function NotificationsScreen() {
-    const [notificationsList, setNotificationsList] = useState(notificationsScreen);
+    const { user } = useContext(AuthContext);
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const handleNotificationPress = (id) => {
-        setNotificationsList(prevList =>
-            prevList.map(notification =>
-                notification.id === id ? { ...notification, read: true } : notification
-            )
-        );
-        // Here you would typically navigate to the relevant screen or show more details
-        console.log(`Notification ${id} pressed`);
+    const fetchNotifications = async () => {
+        try {
+            const { data } = await axios.get(`/user/${user.id}/notifications`);
+            setNotifications(data);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     };
 
-    const markAllAsRead = () => {
-        setNotificationsList(prevList =>
-            prevList.map(notification => ({ ...notification, read: true }))
-        );
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchNotifications();
     };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={GREEN} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <View style={styles.header}>
+            <LinearGradient
+                colors={[GREEN, GREEN + 'DD']}
+                style={styles.header}
+            >
                 <Text style={styles.headerTitle}>الإشعارات</Text>
-                <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
-                    <Text style={styles.markAllButtonText}>تعليم الكل كمقروء</Text>
-                </TouchableOpacity>
-            </View>
+                <Text style={styles.headerSubtitle}>
+                    {notifications.length > 0 
+                        ? `لديك ${notifications.length} إشعارات`
+                        : 'لا توجد إشعارات جديدة'}
+                </Text>
+            </LinearGradient>
+
             <FlatList
-                data={notificationsList}
+                data={notifications}
                 renderItem={({ item }) => (
-                    <NotificationItem
-                        item={item}
-                        onPress={() => handleNotificationPress(item.id)}
-                    />
+                    <NotificationItem item={item} />
                 )}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.notificationsList}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[GREEN]}
+                        tintColor={GREEN}
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="notifications-off-outline" size={64} color={GREEN} />
+                        <Text style={styles.emptyText}>لا توجد إشعارات</Text>
+                    </View>
+                }
             />
         </View>
     );
@@ -102,92 +184,88 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     header: {
-        backgroundColor: GREEN,
-        paddingTop: 50,
+        paddingTop: 60,
         paddingBottom: 20,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     headerTitle: {
         color: '#FFFFFF',
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        fontFamily: 'Arial',
+        textAlign: 'right',
+        marginBottom: 5,
     },
-    markAllButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
-    },
-    markAllButtonText: {
+    headerSubtitle: {
         color: '#FFFFFF',
-        fontSize: 14,
-        fontFamily: 'Arial',
+        fontSize: 16,
+        opacity: 0.9,
+        textAlign: 'right',
     },
     notificationsList: {
         padding: 20,
+        paddingTop: 10,
     },
     notificationItem: {
-        flexDirection: 'row',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 15,
-        padding: 15,
         marginBottom: 15,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
+        borderRadius: 15,
+        overflow: 'hidden',
     },
-    unreadNotification: {
-        backgroundColor: LIGHT_GREEN,
-        borderColor: GREEN,
+    notificationContent: {
+        flexDirection: 'row',
+        padding: 20,
+        borderRadius: 15,
+        alignItems: 'center',
     },
     iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: LIGHT_GREEN,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 15,
     },
-    notificationContent: {
+    textContainer: {
+        padding: 5,
+        borderRadius:10,
         flex: 1,
     },
     notificationTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#333333',
-        fontFamily: 'Arial',
+        color: '#1F2937',
         marginBottom: 5,
         textAlign: 'right',
     },
-    notificationMessage: {
+    notificationBody: {
         fontSize: 14,
-        color: '#666666',
-        fontFamily: 'Arial',
         marginBottom: 5,
         textAlign: 'right',
+        lineHeight: 20,
     },
-    notificationTime: {
+    timeAgo: {
         fontSize: 12,
-        color: '#999999',
-        fontFamily: 'Arial',
+        color: '#6B7280',
         textAlign: 'right',
     },
-    unreadDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: GREEN,
-        position: 'absolute',
-        top: 15,
-        left: 15,
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 50,
+    },
+    emptyText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#6B7280',
+        textAlign: 'center',
     },
 });
 
