@@ -117,7 +117,7 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={styles.registerLink}
-                        onPress={() => router.push('/auth/RegisterScreen')}
+                        onPress={() => router.push('/auth/RegisterTypeScreen')}
                         disabled={loading}
                     >
                         <Text style={styles.registerLinkText}>ليس لديك حساب؟ إنشاء حساب جديد</Text>
