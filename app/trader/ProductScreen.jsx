@@ -27,17 +27,20 @@ const GREEN = '#34D399';
 const ProductItem = ({ item, onAddToCart }) => (
     <View style={styles.productItem}>
         <View style={styles.productHeader}>
-            <Image 
-                source={logo} 
+            <Image
+                source={item.thumbnail ? { uri: item.thumbnail } : logo}
                 style={styles.productImage}
             />
             <View style={styles.mainInfo}>
                 <Text style={styles.productName}>{item.name}</Text>
                 <Text style={styles.productPrice}>{item.price} دينار</Text>
+                <Text style={styles.productExpireDate}>
+                    {item.expire_date ? `تاريخ الانتهاء: ${item.expire_date}` : 'هذا المنتج بدون تاريخ انتهاء'}
+                </Text>
             </View>
         </View>
         <Text style={styles.productDescription}>{item.description}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
             style={styles.addToCartButton}
             onPress={() => onAddToCart(item)}
         >
@@ -46,7 +49,6 @@ const ProductItem = ({ item, onAddToCart }) => (
         </TouchableOpacity>
     </View>
 );
-
 export default function ProductScreen() {
     const { id: storeId, storeName } = useLocalSearchParams();
     const cartContext = useContext(CartContext);
@@ -224,6 +226,12 @@ const styles = StyleSheet.create({
         color: '#FF3B30',
         textAlign: 'center',
         margin: 20,
+    },
+    productExpireDate: {
+        fontSize: 14,
+        color: '#666666',
+        textAlign: 'right',
+        marginTop: 4,
     },
 });
 

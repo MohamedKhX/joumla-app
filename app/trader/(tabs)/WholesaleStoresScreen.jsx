@@ -29,18 +29,15 @@ const LIGHT_GREEN = '#E8FDF5';
 
 const StoreItem = ({ item, onPress }) => (
     <TouchableOpacity style={styles.storeItem} onPress={onPress}>
+
         <Image 
-            source={item.image ? { uri: item.image } : logo} 
+            source={item.logo ? { uri: item.logo } : logo}
             style={styles.storeImage} 
         />
         <View style={styles.storeInfo}>
             <Text style={styles.storeName}>{item.name}</Text>
             <Text style={styles.storeAddress}>{item.address}</Text>
             <Text style={styles.storeDescription}>{item.description}</Text>
-            <View style={styles.ratingContainer}>
-                <Text style={styles.ratingText}>{item.rating || 4.5}</Text>
-                <Ionicons name="star" size={16} color={GREEN} />
-            </View>
         </View>
     </TouchableOpacity>
 );

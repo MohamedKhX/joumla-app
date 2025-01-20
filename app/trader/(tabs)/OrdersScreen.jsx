@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import axios from '../../../utils/axios';
 import { LinearGradient } from 'expo-linear-gradient';
+import AuthContext from "../../../contexts/AuthContext";
 
 const GREEN = '#34D399';
 
@@ -41,12 +42,8 @@ const OrderItem = ({ item }) => {
                 return 'قيد الانتظار';
             case 'Rejected':
                 return 'مرفوض';
-            case 'Cancelled':
-                return 'ملغي';
             case 'Approved':
                 return 'مقبول';
-            case 'Shipped':
-                return 'تم الشحن';
             default:
                 return state;
         }
@@ -74,12 +71,24 @@ const OrderItem = ({ item }) => {
                                 <Text style={styles.orderDate}>{item.date}</Text>
                             </View>
                         </View>
-                        <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                            <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
-                            <Text style={[styles.statusText, { color: statusColors.text }]}>
-                                {getStatusText(item.state)}
-                            </Text>
+                        <View style={{display: 'flex', gap: 5}}>
+                            <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+                                <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
+                                <Text style={[styles.statusText, { color: statusColors.text }]}>
+                                    {getStatusText(item.state)}
+                                </Text>
+                            </View>
+                            { item.state === 'Approved' && item.shipmentState !== 'Pending' && (
+                                <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+                                    <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
+                                    <Text style={[styles.statusText, { color: statusColors.text }]}>
+                                        {getStatusText(item.shipmentState)}
+                                    </Text>
+                                </View>
+                            ) }
+
                         </View>
+
                     </View>
 
                     <View style={styles.orderSummary}>
@@ -152,10 +161,13 @@ export default function OrdersScreen() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const {user,setUser } = useContext(AuthContext);
+
 
     const loadOrders = async () => {
         try {
-            const { data } = await axios.get('/trader/orders');
+            const userId = user.id;
+            const { data } = await axios.get(`/trader/${userId}/orders`);
             setOrders(data);
         } catch (error) {
             console.error('Error loading orders:', error);

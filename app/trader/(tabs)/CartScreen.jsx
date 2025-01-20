@@ -14,43 +14,54 @@ import { Ionicons } from '@expo/vector-icons';
 import logo from '../../../assets/images/logo.webp';
 import AuthContext from '../../../contexts/AuthContext';
 import axios from '../../../utils/axios';
+import Checkbox from 'expo-checkbox';
 
 const GREEN = '#34D399';
 
-const CartItem = ({ item, onRemove, onUpdateQuantity }) => (
-    <View style={styles.cartItem}>
-        <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
-            <Ionicons name="trash-outline" size={24} color="#FF4444" />
-        </TouchableOpacity>
-        <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.product.name}</Text>
-            <Text style={styles.productPrice}>{item.product.price} دينار</Text>
-            <View style={styles.quantityContainer}>
-                <TouchableOpacity 
-                    style={styles.quantityButton}
-                    onPress={() => onUpdateQuantity(item.quantity + 1)}
-                >
-                    <Ionicons name="add" size={20} color={GREEN} />
-                </TouchableOpacity>
-                <Text style={styles.quantity}>{item.quantity}</Text>
-                <TouchableOpacity 
-                    style={styles.quantityButton}
-                    onPress={() => item.quantity > 1 && onUpdateQuantity(item.quantity - 1)}
-                >
-                    <Ionicons name="remove" size={20} color={GREEN} />
-                </TouchableOpacity>
+const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
+    console.log(item);
+    return (
+        <View style={styles.cartItem}>
+            <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+                <Ionicons name="trash-outline" size={24} color="#FF4444" />
+            </TouchableOpacity>
+            <View style={styles.productInfo}>
+                <Text style={styles.productName}>{item.product.name}</Text>
+                <Text style={styles.productPrice}>{item.product.price} دينار</Text>
+                <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() => onUpdateQuantity(item.quantity + 1)}
+                    >
+                        <Ionicons name="add" size={20} color={GREEN} />
+                    </TouchableOpacity>
+                    <Text style={styles.quantity}>{item.quantity}</Text>
+                    <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() => item.quantity > 1 && onUpdateQuantity(item.quantity - 1)}
+                    >
+                        <Ionicons name="remove" size={20} color={GREEN} />
+                    </TouchableOpacity>
+                </View>
             </View>
+            <Image source={item.product.thumbnail ? { uri: item.product.thumbnail } : logo} style={styles.productImage} />
         </View>
-        <Image source={logo} style={styles.productImage} />
-    </View>
-);
+    );
+}
+
 
 const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) => {
-    const storeTotal = storeData.products.reduce((total, item) => 
+    const storeTotal = storeData.products.reduce((total, item) =>
         total + (parseFloat(item.product.price) * item.quantity), 0
     );
-    
+
     const isMinimumMet = storeTotal >= 500;
+    const [isChecked, setChecked] = useState(false);
+
+    const handleCheckboxChange = (newValue) => {
+        setChecked(newValue);
+        storeData.is_deferred = newValue;
+    };
 
     return (
         <View style={styles.storeSection}>
@@ -63,6 +74,15 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
                     onUpdateQuantity={(newQuantity) => onUpdateQuantity(storeId, item.product.id, newQuantity)}
                 />
             ))}
+            <View style={styles.checkboxContainer}>
+                <Text style={styles.checkboxLabel}>بالآجل</Text>
+                <Checkbox
+                    style={styles.checkbox}
+                    value={isChecked}
+                    onValueChange={handleCheckboxChange}
+                    color={isChecked ? '#34D399' : undefined} // Green color when checked
+                />
+            </View>
             <View style={styles.storeTotalContainer}>
                 <Text style={styles.storeTotalText}>
                     المجموع: {storeTotal.toFixed(2)} دينار
@@ -75,9 +95,7 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
             </View>
         </View>
     );
-};
-
-export default function CartScreen() {
+};export default function CartScreen() {
     const { user } = useContext(AuthContext);
     const { cart, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,7 +135,6 @@ export default function CartScreen() {
 
         try {
             setIsSubmitting(true);
-
             // Format orders data
             const orders = stores.map(([storeId, storeData]) => ({
                 wholesale_store_id: parseInt(storeId),
@@ -125,7 +142,8 @@ export default function CartScreen() {
                     product_id: item.product.id,
                     quantity: item.quantity,
                     price: parseFloat(item.product.price)
-                }))
+                })),
+                deferred: storeData.is_deferred // Add deferred status
             }));
 
             // Submit order with user.trader_id instead of user.id
@@ -141,17 +159,17 @@ export default function CartScreen() {
             Alert.alert(
                 'نجاح',
                 'تم إرسال طلبك بنجاح',
-                [{ text: 'حسناً', style: 'default' }]
+                [{ text: '��سناً', style: 'default' }]
             );
 
         } catch (error) {
             console.error('Order submission error:', error);
             let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
-            
+
             if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             }
-            
+
             Alert.alert(
                 'خطأ',
                 errorMessage,
@@ -338,6 +356,23 @@ const styles = StyleSheet.create({
     },
     checkoutButtonDisabled: {
         backgroundColor: '#CCCCCC',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end', // Align to the right
+        marginTop: 12,
+        marginLeft: 5,
+        marginRight: 5
+    },
+    checkboxLabel: {
+        marginLeft: 8,
+        fontSize: 16,
+        color: '#333333',
+        marginRight: 5
+    },
+    checkbox: {
+
     },
 });
 
