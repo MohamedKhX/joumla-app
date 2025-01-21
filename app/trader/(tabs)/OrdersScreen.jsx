@@ -44,6 +44,12 @@ const OrderItem = ({ item }) => {
                 return 'مرفوض';
             case 'Approved':
                 return 'مقبول';
+            case 'Shipped':
+                return 'تم التوصيل';
+            case 'Waiting For Shipping':
+                return 'في انتظار التوصيل';
+            case 'Shipping':
+                return 'جاري التوصيل';
             default:
                 return state;
         }

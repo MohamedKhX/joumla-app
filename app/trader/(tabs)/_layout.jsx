@@ -57,7 +57,7 @@ export default function TabsLayout() {
                 header: ({ route }) => (
                     <CustomHeader
                         title={
-                            route.name === 'WholesaleStoresScreen' ? 'المتاجر' :
+                            route.name === 'WholesaleStoresScreen' ? 'الممحل تجزئة' :
                             route.name === 'CartScreen' ? 'السلة' :
                             route.name === 'OrdersScreen' ? 'الطلبات' :
                             'الإشعارات'
@@ -83,7 +83,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="WholesaleStoresScreen"
                 options={{
-                    title: 'المتاجر',
+                    title: 'الممحل تجزئة',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="storefront-outline" size={size} color={color} />
                     ),

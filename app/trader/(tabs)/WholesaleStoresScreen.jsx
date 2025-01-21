@@ -61,7 +61,7 @@ export default function WholesaleStoresScreen() {
             setStores(data);
         } catch (error) {
             console.error('Error loading stores:', error);
-            setError('حدث خطأ في تحميل المتاجر');
+            setError('حدث خطأ في تحميل الممحل تجزئة');
         } finally {
             setLoading(false);
         }
@@ -96,15 +96,15 @@ export default function WholesaleStoresScreen() {
             <View style={styles.header}>
                 <View style={styles.headerTop}>
 
-                    <Text style={styles.headerTitle}>متاجر الجملة</Text>
+                    <Text style={styles.headerTitle}>ممحل تجزئة الجملة</Text>
                 </View>
-                <Text style={styles.headerSubtitle}>اكتشف أفضل متاجر الجملة في مدينتك</Text>
+                <Text style={styles.headerSubtitle}>اكتشف أفضل ممحل تجزئة الجملة في مدينتك</Text>
             </View>
             <View style={styles.searchContainer}>
                 <Ionicons name="search-outline" size={24} color="#666666" style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="ابحث عن المتاجر"
+                    placeholder="ابحث عن الممحل تجزئة"
                     placeholderTextColor="#666666"
                     value={searchQuery}
                     onChangeText={setSearchQuery}

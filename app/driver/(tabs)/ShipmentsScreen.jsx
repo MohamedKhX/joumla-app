@@ -8,16 +8,22 @@ import {
     Alert,
     ActivityIndicator,
     Linking,
+    useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from '../../../utils/axios';
 import AuthContext from "../../../contexts/AuthContext";
 import { ShipmentStateEnum, getStatusColor } from '../../../utils/shipmentStates';
+import { useFocusEffect } from 'expo-router';
+import { TraderOrderNotification } from '../../components/TraderOrderNotification';
 
 const GREEN = '#34D399';
 
-const ShipmentItem = ({ shipment, onAccept, onComplete }) => {
+const ShipmentItem = ({ shipment, onAccept, onComplete, activeShipment }) => {
+    const [isAcceptLoading, setAcceptLoading] = useState(false);
+    const [isMapLoading, setMapLoading] = useState(false);
+
     const openMap = (latitude, longitude) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
         Linking.openURL(url);
@@ -25,63 +31,171 @@ const ShipmentItem = ({ shipment, onAccept, onComplete }) => {
 
     const statusColors = getStatusColor(shipment.state);
 
+    const handleAccept = async (id) => {
+        setAcceptLoading(true);
+        try {
+            await onAccept(id);
+        } finally {
+            setAcceptLoading(false);
+        }
+    };
+
+    const handleMapPress = async (latitude, longitude) => {
+        setMapLoading(true);
+        try {
+            await openMap(latitude, longitude);
+        } finally {
+            setMapLoading(false);
+        }
+    };
+
     return (
         <View style={styles.shipmentItem}>
             <LinearGradient
-                colors={[statusColors.bg, statusColors.bg + '05']}
+                colors={['#FFFFFF', '#F8FAFC']}
                 style={styles.shipmentContent}
             >
-                <View style={styles.shipmentHeader}>
-                    <View style={styles.traderInfo}>
-                        <Text style={styles.traderName}>{shipment.trader.name}</Text>
-                        <Text style={styles.shipmentDate}>{shipment.date}</Text>
-                        <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                            <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
-                            <Text style={[styles.statusText, { color: statusColors.text }]}>
-                                {ShipmentStateEnum[shipment.state]}
-                            </Text>
-                        </View>
+                <LinearGradient
+                    colors={[statusColors.bg, statusColors.bg + '90']}
+                    start={{x: 0, y: 0}}
+                    end={{x: 1, y: 0}}
+                    style={styles.statusBar}
+                >
+                    <View style={styles.statusBadge}>
+                        <Text style={[styles.statusText, { color: '#FFFFFF' }]}>
+                            {ShipmentStateEnum[shipment.state]}
+                        </Text>
+                        <Ionicons 
+                            name={
+                                shipment.state === 'WaitingForReceiving' ? 'time' :
+                                shipment.state === 'Approved' ? 'checkmark-circle' :
+                                'alert-circle'
+                            } 
+                            size={18} 
+                            color="#FFFFFF" 
+                            style={styles.statusIcon}
+                        />
                     </View>
                     <TouchableOpacity 
-                        style={styles.mapButton}
-                        onPress={() => openMap(shipment.trader.location.latitude, shipment.trader.location.longitude)}
+                        style={[styles.mapButton, isMapLoading && styles.buttonDisabled]}
+                        onPress={() => handleMapPress(shipment.trader.location.latitude, shipment.trader.location.longitude)}
+                        disabled={isMapLoading}
                     >
-                        <Ionicons name="location-outline" size={24} color="#FFFFFF" />
+                        <View style={styles.mapButtonContainer}>
+                            {isMapLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <>
+                                    <Ionicons name="navigate" size={20} color={GREEN} />
+                                    <Text style={styles.mapButtonText}>الموقع</Text>
+                                </>
+                            )}
+                        </View>
                     </TouchableOpacity>
+                </LinearGradient>
+
+                <View style={styles.shipmentHeader}>
+                    <View style={styles.traderInfo}>
+                        <View style={styles.traderNameContainer}>
+                            <Text style={styles.traderName}>{shipment.trader.name}</Text>
+                            <View style={styles.iconBubble}>
+                                <Ionicons name="business" size={20} color={GREEN} />
+                            </View>
+                        </View>
+                        <View style={styles.dateContainer}>
+                            <Text style={styles.shipmentDate}>{shipment.date}</Text>
+                            <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+                        </View>
+                    </View>
                 </View>
 
                 <View style={styles.ordersList}>
                     {shipment.orders.map((order, index) => (
-                        <View key={order.id} style={styles.orderItem}>
-                            <Text style={styles.storeName}>{order.store_name}</Text>
-                            {order.items.map((item, idx) => (
-                                <Text key={idx} style={styles.itemText}>
-                                    {item.quantity}x {item.product_name}
-                                </Text>
-                            ))}
-                        </View>
+                        <LinearGradient
+                            key={order.id}
+                            colors={[GREEN + '08', GREEN + '03']}
+                            style={styles.orderCard}
+                        >
+                            <View style={styles.storeNameContainer}>
+                                <Text style={styles.storeName}>{order.store_name}</Text>
+                                <View style={styles.iconBubble}>
+                                    <Ionicons name="storefront" size={18} color={GREEN} />
+                                </View>
+                            </View>
+                            <View style={styles.itemsList}>
+                                {order.items.map((item, idx) => (
+                                    <View key={idx} style={styles.itemContainer}>
+                                        <Text style={styles.itemText}>
+                                            {item.product_name}
+                                            <Text style={styles.quantityText}> × {item.quantity}</Text>
+                                        </Text>
+                                        <View style={styles.itemIconBubble}>
+                                            <Ionicons name="cube" size={14} color={GREEN} />
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+                        </LinearGradient>
                     ))}
                 </View>
 
-                <View style={styles.shipmentFooter}>
-                    <TouchableOpacity 
-                        style={styles.acceptButton}
-                        onPress={onAccept}
-                    >
-                        <Text style={styles.acceptButtonText}>قبول الشحنة</Text>
-                    </TouchableOpacity>
-                    {shipment.state === 'WaitingForReceiving' && (
+                <LinearGradient
+                    colors={['#F9FAFB', '#FFFFFF']}
+                    style={styles.shipmentFooter}
+                >
+                    <View style={styles.totalContainer}>
+                        <Text style={styles.totalLabel}>المجموع: </Text>
+                        <Text style={styles.totalAmount}>
+                            {shipment.total_amount} دينار
+                        </Text>
+                    </View>
+                    <View style={styles.actionButtons}>
                         <TouchableOpacity 
-                            style={styles.completeButton}
-                            onPress={onComplete}
+                            style={[
+                                styles.actionButton, 
+                                styles.acceptButton, 
+                                isAcceptLoading && styles.buttonDisabled,
+                                !!activeShipment && styles.buttonDisabled
+                            ]}
+                            onPress={() => handleAccept(shipment.id)}
+                            disabled={isAcceptLoading || !!activeShipment}
                         >
-                            <Text style={styles.completeButtonText}>إكمال التوصيل</Text>
+                            <LinearGradient
+                                colors={[GREEN, GREEN + 'DD']}
+                                style={styles.buttonGradient}
+                                start={{x: 0, y: 0}}
+                                end={{x: 1, y: 1}}
+                            >
+                                {isAcceptLoading ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                                        <Text style={styles.buttonText}>
+                                            {!!activeShipment ? 'لديك شحنة نشطة' : 'قبول الشحنة'}
+                                        </Text>
+                                    </>
+                                )}
+                            </LinearGradient>
                         </TouchableOpacity>
-                    )}
-                    <Text style={styles.totalAmount}>
-                        {shipment.total_amount} دينار
-                    </Text>
-                </View>
+                        {shipment.state === 'WaitingForReceiving' && (
+                            <TouchableOpacity 
+                                style={[styles.actionButton, styles.completeButton]}
+                                onPress={onComplete}
+                            >
+                                <LinearGradient
+                                    colors={[GREEN, GREEN + 'DD']}
+                                    style={styles.buttonGradient}
+                                    start={{x: 0, y: 0}}
+                                    end={{x: 1, y: 1}}
+                                >
+                                    <Text style={styles.buttonText}>إكمال التوصيل</Text>
+                                    <Ionicons name="flag" size={20} color="#FFFFFF" />
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </LinearGradient>
             </LinearGradient>
         </View>
     );
@@ -90,31 +204,78 @@ const ShipmentItem = ({ shipment, onAccept, onComplete }) => {
 export default function ShipmentsScreen() {
     const { user } = useContext(AuthContext);
     const [shipments, setShipments] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [activeShipment, setActiveShipment] = useState(false);
 
-    const loadShipments = async () => {
+    useColorScheme(); // We add this but don't use its value to prevent theme changes
+
+    const checkActiveShipment = async () => {
         try {
-            const { data } = await axios.get('/shipments/available');
-            setShipments(data);
+            const { data } = await axios.get(`/driver/${user.id}/shipments`);
+            const active = !!data.find(shipment => 
+                shipment.state === 'Waiting For Receiving' || 
+                shipment.state === 'Received' || 
+                shipment.state === 'Shipping'
+            );
+            setActiveShipment(active);
         } catch (error) {
-            console.error('Error loading shipments:', error);
-            Alert.alert('خطأ', 'حدث خطأ في تحميل الشحنات');
+            console.error('Error checking active shipments:', error);
+            setActiveShipment(false);
+        }
+    };
+
+    const loadData = async () => {
+        try {
+            const [shipmentsResponse, notificationsResponse] = await Promise.all([
+                axios.get('/shipments/available'),
+                axios.get(`/user/${user.id}/notifications`)
+            ]);
+            
+            setShipments(shipmentsResponse.data);
+            setNotifications(notificationsResponse.data);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            Alert.alert('خطأ', 'حدث خطأ في تحميل البيانات');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    useEffect(() => {
-        loadShipments();
-    }, []);
+    const handleNotificationAction = async (url) => {
+        try {
+            await axios.post(url);
+            loadData(); // Refresh both shipments and notifications
+            Alert.alert('نجاح', 'تم تنفيذ الإجراء بنجاح');
+        } catch (error) {
+            console.error('Error handling notification action:', error);
+            Alert.alert('خطأ', 'حدث خطأ أثناء تنفيذ الإجراء');
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            setLoading(true);
+            loadData();
+        }, [])
+    );
 
     const handleAccept = async (shipmentId) => {
+        if (activeShipment) {
+            Alert.alert(
+                'لا يمكن قبول شحنة جديدة',
+                'يجب إكمال الشحنة الحالية أولاً قبل قبول شحنة جديدة',
+                [{ text: 'حسناً', style: 'cancel' }]
+            );
+            return;
+        }
+
         try {
             await axios.post(`/shipments/${shipmentId}/${user.id}/accept`);
             Alert.alert('نجاح', 'تم قبول الشحنة بنجاح');
-            loadShipments();
+            loadData();
         } catch (error) {
             console.error('Error accepting shipment:', error);
             Alert.alert('خطأ', 'حدث خطأ في قبول الشحنة');
@@ -125,7 +286,7 @@ export default function ShipmentsScreen() {
         try {
             await axios.post(`/shipments/${shipmentId}/Shipped`);
             Alert.alert('نجاح', 'تم شحن الشحنة بنجاح');
-            loadShipments();
+            loadData();
         } catch (error) {
             console.error('Error completing shipment:', error);
             Alert.alert('خطأ', 'حدث خطأ في إكمال الشحنة');
@@ -142,13 +303,28 @@ export default function ShipmentsScreen() {
 
     return (
         <View style={styles.container}>
+            {notifications.length > 0 && (
+                <FlatList
+                    data={notifications}
+                    renderItem={({ item }) => (
+                        <TraderOrderNotification 
+                            notification={item}
+                            onAction={handleNotificationAction}
+                        />
+                    )}
+                    keyExtractor={item => item.id}
+                    style={styles.notificationsList}
+                />
+            )}
+            
             <FlatList
                 data={shipments}
                 renderItem={({ item }) => (
                     <ShipmentItem 
                         shipment={item}
-                        onAccept={() => handleAccept(item.id)}
-                        onComplete={() => handleComplete(item.id)}
+                        onAccept={handleAccept}
+                        onComplete={handleComplete}
+                        activeShipment={activeShipment}
                     />
                 )}
                 keyExtractor={item => item.id.toString()}
@@ -156,7 +332,7 @@ export default function ShipmentsScreen() {
                 refreshing={refreshing}
                 onRefresh={() => {
                     setRefreshing(true);
-                    loadShipments();
+                    loadData();
                 }}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
@@ -172,7 +348,8 @@ export default function ShipmentsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F3F4F6',
+        colorScheme: 'light',
     },
     loadingContainer: {
         flex: 1,
@@ -183,138 +360,220 @@ const styles = StyleSheet.create({
         padding: 15,
     },
     shipmentItem: {
-        marginBottom: 15,
-        borderRadius: 15,
+        marginHorizontal: 16,
+        marginVertical: 8,
+        borderRadius: 20,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        backgroundColor: '#FFFFFF',
     },
-    shipmentContent: {
-        padding: 15,
-    },
-    shipmentHeader: {
+    statusBar: {
+        height: 50,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    shipmentContent: {
+        borderRadius: 20,
+    },
+    shipmentHeader: {
+        padding: 16,
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 15,
+    },
+    iconBubble: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: GREEN + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    itemIconBubble: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: GREEN + '10',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
     },
     traderInfo: {
         flex: 1,
-        marginRight: 10,
+        alignItems: 'flex-end',
+    },
+    traderNameContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        marginBottom: 12,
     },
     traderName: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#1F2937',
         textAlign: 'right',
-        marginBottom: 4,
+        backgroundColor: 'transparent',
+    },
+    dateContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
     shipmentDate: {
         fontSize: 14,
         color: '#6B7280',
-        textAlign: 'right',
+        marginLeft: 6,
     },
     mapButton: {
+        borderRadius: 20,
+        overflow: 'hidden',
         backgroundColor: '#FFFFFF',
-        padding: 10,
-        borderRadius: 12,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        elevation: 2,
+    },
+    mapButtonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+    },
+    mapButtonText: {
+        color: GREEN,
+        fontSize: 14,
+        marginRight: 4,
+        fontWeight: '500',
+    },
+    statusIcon: {
+        marginRight: 6,
     },
     ordersList: {
-        marginBottom: 15,
+        padding: 16,
     },
-    orderItem: {
-        backgroundColor: '#FFFFFF',
-        padding: 12,
-        borderRadius: 10,
-        marginBottom: 8,
+    orderCard: {
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+    },
+    storeNameContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        marginBottom: 12,
     },
     storeName: {
         fontSize: 16,
         fontWeight: '600',
         color: '#1F2937',
-        marginBottom: 8,
         textAlign: 'right',
+    },
+    itemsList: {
+        paddingLeft: 48,
+    },
+    itemContainer: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        marginBottom: 8,
     },
     itemText: {
         fontSize: 14,
         color: '#4B5563',
-        marginBottom: 4,
         textAlign: 'right',
+        backgroundColor: 'transparent',
+    },
+    quantityText: {
+        color: GREEN,
+        fontWeight: '600',
     },
     shipmentFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        padding: 16,
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
-        paddingTop: 15,
+    },
+    actionButtons: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between',
+        marginTop: 16,
+    },
+    actionButton: {
+        flex: 1,
+        borderRadius: 16,
+        overflow: 'hidden',
     },
     acceptButton: {
-        backgroundColor: GREEN,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    acceptButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 6,
+        marginRight: 8,
     },
     completeButton: {
-        backgroundColor: GREEN,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
+        marginLeft: 8,
     },
-    completeButtonText: {
+    buttonGradient: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+    },
+    buttonText: {
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
-        marginLeft: 6,
+        marginLeft: 8,
+    },
+    totalContainer: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    totalLabel: {
+        fontSize: 16,
+        color: '#6B7280',
+        marginRight: 8,
     },
     totalAmount: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         color: GREEN,
     },
+    statusBadge: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '500',
+        backgroundColor: 'transparent',
+    },
     emptyContainer: {
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 50,
+        paddingTop: 64,
     },
     emptyText: {
-        marginTop: 10,
+        marginTop: 16,
         fontSize: 16,
         color: '#6B7280',
         textAlign: 'center',
     },
-    statusBadge: {
-        padding: 4,
-        borderRadius: 4,
-        marginTop: 4,
+    buttonDisabled: {
+        opacity: 0.7,
     },
-    statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 4,
+    mapButtonGradient: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 16,
     },
-    statusText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#FFFFFF',
+    notificationsList: {
+        maxHeight: 'auto',
+        paddingHorizontal: 16,
+        paddingTop: 16,
     },
 }); 
