@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
     View,
     Text,
@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from '../../../utils/axios';
+import AuthContext from "../../../contexts/AuthContext";
 
 const GREEN = '#34D399';
 
@@ -70,6 +71,7 @@ const ShipmentItem = ({ shipment, onAccept }) => {
 };
 
 export default function ShipmentsScreen() {
+    const { user } = useContext(AuthContext);
     const [shipments, setShipments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -93,7 +95,7 @@ export default function ShipmentsScreen() {
 
     const handleAccept = async (shipmentId) => {
         try {
-            await axios.post(`/shipments/${shipmentId}/accept`);
+            await axios.post(`/shipments/${shipmentId}/${user.id}/accept`);
             Alert.alert('نجاح', 'تم قبول الشحنة بنجاح');
             loadShipments();
         } catch (error) {

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
 import { useContext, useState } from 'react';
 import { router } from 'expo-router';
 import AuthContext from '../../../contexts/AuthContext';
-import { logout } from '../../../services/AuthService';
+import {loadUser, logout} from '../../../services/AuthService';
 
 // Force RTL layout
 I18nManager.forceRTL(true);
@@ -52,63 +52,79 @@ const CustomHeader = ({ title }) => {
 };
 
 export default function DriverLayout() {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        async function runEffect() {
+            try {
+                const userData = await loadUser();
+                setUser(userData);
+            } catch (e) {
+                setUser(null);
+            }
+        }
+
+        runEffect();
+    }, []);
     return (
-        <Tabs
-            screenOptions={{
-                headerShown: true,
-                header: ({ route }) => (
-                    <CustomHeader
-                        title={
-                            route.name === 'ShipmentsScreen' ? 'الشحنات المتاحة' :
-                            route.name === 'MyShipmentsScreen' ? 'شحناتي' :
-                            'الإشعارات'
-                        }
-                    />
-                ),
-                tabBarActiveTintColor: GREEN,
-                tabBarInactiveTintColor: '#757575',
-                tabBarStyle: {
-                    backgroundColor: '#FFFFFF',
-                    borderTopWidth: 1,
-                    borderTopColor: '#EEEEEE',
-                    height: 60,
-                    paddingBottom: 5,
-                    paddingTop: 5,
-                },
-                tabBarLabelStyle: {
-                    fontFamily: 'Arial',
-                    fontSize: 12,
-                }
-            }}
-        >
-            <Tabs.Screen
-                name="ShipmentsScreen"
-                options={{
-                    title: 'الشحنات',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="cube-outline" size={size} color={color} />
+        <AuthContext.Provider value={{ user, setUser }}>
+            <Tabs
+                screenOptions={{
+                    headerShown: true,
+                    header: ({ route }) => (
+                        <CustomHeader
+                            title={
+                                route.name === 'ShipmentsScreen' ? 'الشحنات المتاحة' :
+                                    route.name === 'MyShipmentsScreen' ? 'شحناتي' :
+                                        'الإشعارات'
+                            }
+                        />
                     ),
+                    tabBarActiveTintColor: GREEN,
+                    tabBarInactiveTintColor: '#757575',
+                    tabBarStyle: {
+                        backgroundColor: '#FFFFFF',
+                        borderTopWidth: 1,
+                        borderTopColor: '#EEEEEE',
+                        height: 60,
+                        paddingBottom: 5,
+                        paddingTop: 5,
+                    },
+                    tabBarLabelStyle: {
+                        fontFamily: 'Arial',
+                        fontSize: 12,
+                    }
                 }}
-            />
-            <Tabs.Screen
-                name="MyShipmentsScreen"
-                options={{
-                    title: 'شحناتي',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="car-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="NotificationsScreen"
-                options={{
-                    title: 'الإشعارات',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="notifications-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-        </Tabs>
+            >
+                <Tabs.Screen
+                    name="ShipmentsScreen"
+                    options={{
+                        title: 'الشحنات',
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="cube-outline" size={size} color={color} />
+                        ),
+                    }}
+                />
+                <Tabs.Screen
+                    name="MyShipmentsScreen"
+                    options={{
+                        title: 'شحناتي',
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="car-outline" size={size} color={color} />
+                        ),
+                    }}
+                />
+              {/*  <Tabs.Screen
+                    name="NotificationsScreen"
+                    options={{
+                        title: 'الإشعارات',
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="notifications-outline" size={size} color={color} />
+                        ),
+                    }}
+                />*/}
+            </Tabs>
+        </AuthContext.Provider>
     );
 }
 
