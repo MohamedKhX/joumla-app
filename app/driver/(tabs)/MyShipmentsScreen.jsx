@@ -13,35 +13,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from '../../../utils/axios';
 import AuthContext from '../../../contexts/AuthContext';
+import { ShipmentStateEnum, getStatusColor } from '../../../utils/shipmentStates';
 
 const GREEN = '#34D399';
 
-const ShipmentItem = ({ shipment, onComplete }) => {
+const ShipmentItem = ({ shipment, onComplete, onCancel }) => {
     const openMap = (latitude, longitude) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
         Linking.openURL(url);
-    };
-
-    const getStatusColor = (state) => {
-        switch (state) {
-            case 'InProgress':
-                return { bg: '#FFF7ED', text: '#EA580C', dot: '#F97316' };
-            case 'Completed':
-                return { bg: '#F0FDF4', text: '#16A34A', dot: '#22C55E' };
-            default:
-                return { bg: '#F3F4F6', text: '#4B5563', dot: '#6B7280' };
-        }
-    };
-
-    const getStatusText = (state) => {
-        switch (state) {
-            case 'InProgress':
-                return 'قيد التوصيل';
-            case 'Completed':
-                return 'تم التوصيل';
-            default:
-                return state;
-        }
     };
 
     const statusColors = getStatusColor(shipment.state);
@@ -49,7 +28,7 @@ const ShipmentItem = ({ shipment, onComplete }) => {
     return (
         <View style={styles.shipmentItem}>
             <LinearGradient
-                colors={[GREEN + '10', GREEN + '05']}
+                colors={[statusColors.bg, statusColors.bg + '05']}
                 style={styles.shipmentContent}
             >
                 <View style={styles.shipmentHeader}>
@@ -59,7 +38,7 @@ const ShipmentItem = ({ shipment, onComplete }) => {
                         <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
                             <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                             <Text style={[styles.statusText, { color: statusColors.text }]}>
-                                {getStatusText(shipment.state)}
+                                {ShipmentStateEnum[shipment.state]}
                             </Text>
                         </View>
                     </View>
@@ -85,7 +64,7 @@ const ShipmentItem = ({ shipment, onComplete }) => {
                 </View>
 
                 <View style={styles.shipmentFooter}>
-                    {shipment.state === 'InProgress' && (
+                    {shipment.state === 'WaitingForReceiving' && (
                         <TouchableOpacity 
                             style={styles.completeButton}
                             onPress={onComplete}
@@ -93,6 +72,12 @@ const ShipmentItem = ({ shipment, onComplete }) => {
                             <Text style={styles.completeButtonText}>إكمال التوصيل</Text>
                         </TouchableOpacity>
                     )}
+                    <TouchableOpacity 
+                        style={styles.cancelButton}
+                        onPress={onCancel}
+                    >
+                        <Text style={styles.cancelButtonText}>إلغاء الشحنة</Text>
+                    </TouchableOpacity>
                     <Text style={styles.totalAmount}>
                         {shipment.total_amount} دينار
                     </Text>
@@ -199,6 +184,20 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 6,
     },
+    cancelButton: {
+        backgroundColor: '#EF4444',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 6,
+    },
     totalAmount: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -251,6 +250,17 @@ export default function MyShipmentsScreen() {
         }
     };
 
+    const handleCancel = async (shipmentId) => {
+        try {
+            await axios.post(`/shipments/${shipmentId}/cancel`);
+            Alert.alert('نجاح', 'تم إلغاء الشحنة بنجاح');
+            loadShipments();
+        } catch (error) {
+            console.error('Error canceling shipment:', error);
+            Alert.alert('خطأ', 'حدث خطأ في إلغاء الشحنة');
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -267,6 +277,7 @@ export default function MyShipmentsScreen() {
                     <ShipmentItem 
                         shipment={item}
                         onComplete={() => handleComplete(item.id)}
+                        onCancel={() => handleCancel(item.id)}
                     />
                 )}
                 keyExtractor={item => item.id.toString()}

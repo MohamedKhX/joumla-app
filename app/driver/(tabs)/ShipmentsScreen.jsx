@@ -13,31 +13,40 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from '../../../utils/axios';
 import AuthContext from "../../../contexts/AuthContext";
+import { ShipmentStateEnum, getStatusColor } from '../../../utils/shipmentStates';
 
 const GREEN = '#34D399';
 
-const ShipmentItem = ({ shipment, onAccept }) => {
+const ShipmentItem = ({ shipment, onAccept, onComplete }) => {
     const openMap = (latitude, longitude) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
         Linking.openURL(url);
     };
 
+    const statusColors = getStatusColor(shipment.state);
+
     return (
         <View style={styles.shipmentItem}>
             <LinearGradient
-                colors={[GREEN + '10', GREEN + '05']}
+                colors={[statusColors.bg, statusColors.bg + '05']}
                 style={styles.shipmentContent}
             >
                 <View style={styles.shipmentHeader}>
                     <View style={styles.traderInfo}>
                         <Text style={styles.traderName}>{shipment.trader.name}</Text>
                         <Text style={styles.shipmentDate}>{shipment.date}</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+                            <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
+                            <Text style={[styles.statusText, { color: statusColors.text }]}>
+                                {ShipmentStateEnum[shipment.state]}
+                            </Text>
+                        </View>
                     </View>
                     <TouchableOpacity 
                         style={styles.mapButton}
                         onPress={() => openMap(shipment.trader.location.latitude, shipment.trader.location.longitude)}
                     >
-                        <Ionicons name="location-outline" size={24} color={GREEN} />
+                        <Ionicons name="location-outline" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
 
@@ -61,6 +70,14 @@ const ShipmentItem = ({ shipment, onAccept }) => {
                     >
                         <Text style={styles.acceptButtonText}>قبول الشحنة</Text>
                     </TouchableOpacity>
+                    {shipment.state === 'WaitingForReceiving' && (
+                        <TouchableOpacity 
+                            style={styles.completeButton}
+                            onPress={onComplete}
+                        >
+                            <Text style={styles.completeButtonText}>إكمال التوصيل</Text>
+                        </TouchableOpacity>
+                    )}
                     <Text style={styles.totalAmount}>
                         {shipment.total_amount} دينار
                     </Text>
@@ -104,6 +121,17 @@ export default function ShipmentsScreen() {
         }
     };
 
+    const handleComplete = async (shipmentId) => {
+        try {
+            await axios.post(`/shipments/${shipmentId}/Shipped`);
+            Alert.alert('نجاح', 'تم شحن الشحنة بنجاح');
+            loadShipments();
+        } catch (error) {
+            console.error('Error completing shipment:', error);
+            Alert.alert('خطأ', 'حدث خطأ في إكمال الشحنة');
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -120,6 +148,7 @@ export default function ShipmentsScreen() {
                     <ShipmentItem 
                         shipment={item}
                         onAccept={() => handleAccept(item.id)}
+                        onComplete={() => handleComplete(item.id)}
                     />
                 )}
                 keyExtractor={item => item.id.toString()}
@@ -131,8 +160,8 @@ export default function ShipmentsScreen() {
                 }}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="cube-outline" size={64} color={GREEN} />
-                        <Text style={styles.emptyText}>لا توجد شحنات متاحة حالياً</Text>
+                        <Ionicons name="car-outline" size={64} color={GREEN} />
+                        <Text style={styles.emptyText}>لا توجد شحنات حالياً</Text>
                     </View>
                 }
             />
@@ -157,6 +186,8 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         borderRadius: 15,
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     shipmentContent: {
         padding: 15,
@@ -240,6 +271,20 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 6,
     },
+    completeButton: {
+        backgroundColor: GREEN,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    completeButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 6,
+    },
     totalAmount: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -255,5 +300,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#6B7280',
         textAlign: 'center',
+    },
+    statusBadge: {
+        padding: 4,
+        borderRadius: 4,
+        marginTop: 4,
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 4,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FFFFFF',
     },
 }); 
