@@ -16,7 +16,6 @@ import axios from '../../../utils/axios';
 import AuthContext from "../../../contexts/AuthContext";
 import { ShipmentStateEnum, getStatusColor } from '../../../utils/shipmentStates';
 import { useFocusEffect } from 'expo-router';
-import { TraderOrderNotification } from '../../components/TraderOrderNotification';
 
 const GREEN = '#34D399';
 
@@ -204,7 +203,6 @@ const ShipmentItem = ({ shipment, onAccept, onComplete, activeShipment }) => {
 export default function ShipmentsScreen() {
     const { user } = useContext(AuthContext);
     const [shipments, setShipments] = useState([]);
-    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeShipment, setActiveShipment] = useState(false);
@@ -226,39 +224,26 @@ export default function ShipmentsScreen() {
         }
     };
 
-    const loadData = async () => {
+    const loadShipments = async () => {
         try {
-            const [shipmentsResponse, notificationsResponse] = await Promise.all([
+            const [availableResponse] = await Promise.all([
                 axios.get('/shipments/available'),
-                axios.get(`/user/${user.id}/notifications`)
+                checkActiveShipment()
             ]);
-            
-            setShipments(shipmentsResponse.data);
-            setNotifications(notificationsResponse.data);
+            setShipments(availableResponse.data);
         } catch (error) {
-            console.error('Error loading data:', error);
-            Alert.alert('خطأ', 'حدث خطأ في تحميل البيانات');
+            console.error('Error loading shipments:', error);
+            Alert.alert('خطأ', 'حدث خطأ في تحميل الشحنات');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    const handleNotificationAction = async (url) => {
-        try {
-            await axios.post(url);
-            loadData(); // Refresh both shipments and notifications
-            Alert.alert('نجاح', 'تم تنفيذ الإجراء بنجاح');
-        } catch (error) {
-            console.error('Error handling notification action:', error);
-            Alert.alert('خطأ', 'حدث خطأ أثناء تنفيذ الإجراء');
-        }
-    };
-
     useFocusEffect(
         React.useCallback(() => {
             setLoading(true);
-            loadData();
+            loadShipments();
         }, [])
     );
 
@@ -275,7 +260,7 @@ export default function ShipmentsScreen() {
         try {
             await axios.post(`/shipments/${shipmentId}/${user.id}/accept`);
             Alert.alert('نجاح', 'تم قبول الشحنة بنجاح');
-            loadData();
+            loadShipments();
         } catch (error) {
             console.error('Error accepting shipment:', error);
             Alert.alert('خطأ', 'حدث خطأ في قبول الشحنة');
@@ -286,7 +271,7 @@ export default function ShipmentsScreen() {
         try {
             await axios.post(`/shipments/${shipmentId}/Shipped`);
             Alert.alert('نجاح', 'تم شحن الشحنة بنجاح');
-            loadData();
+            loadShipments();
         } catch (error) {
             console.error('Error completing shipment:', error);
             Alert.alert('خطأ', 'حدث خطأ في إكمال الشحنة');
@@ -303,20 +288,6 @@ export default function ShipmentsScreen() {
 
     return (
         <View style={styles.container}>
-            {notifications.length > 0 && (
-                <FlatList
-                    data={notifications}
-                    renderItem={({ item }) => (
-                        <TraderOrderNotification 
-                            notification={item}
-                            onAction={handleNotificationAction}
-                        />
-                    )}
-                    keyExtractor={item => item.id}
-                    style={styles.notificationsList}
-                />
-            )}
-            
             <FlatList
                 data={shipments}
                 renderItem={({ item }) => (
@@ -332,7 +303,7 @@ export default function ShipmentsScreen() {
                 refreshing={refreshing}
                 onRefresh={() => {
                     setRefreshing(true);
-                    loadData();
+                    loadShipments();
                 }}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
@@ -570,10 +541,5 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 20,
         borderRadius: 16,
-    },
-    notificationsList: {
-        maxHeight: 'auto',
-        paddingHorizontal: 16,
-        paddingTop: 16,
     },
 }); 

@@ -15,8 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from '../../../utils/axios';
 import AuthContext from '../../../contexts/AuthContext';
 import { ShipmentStateEnum, getStatusColor } from '../../../utils/shipmentStates';
-import { useFocusEffect } from 'expo-router';
-import { TraderOrderNotification } from '../../components/TraderOrderNotification';
 
 const GREEN = '#34D399';
 
@@ -67,10 +65,6 @@ const StateProgressBar = ({ currentState }) => {
 };
 
 const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
-    const [isStateChangeLoading, setStateChangeLoading] = useState(false);
-    const [isCancelLoading, setCancelLoading] = useState(false);
-    const [isMapLoading, setMapLoading] = useState(false);
-
     const openMap = (latitude, longitude) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
         Linking.openURL(url);
@@ -90,33 +84,6 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                 return 'flag-outline';
             default:
                 return 'ellipse-outline';
-        }
-    };
-
-    const handleStateChange = async (id, newState) => {
-        setStateChangeLoading(true);
-        try {
-            await onStateChange(id, newState);
-        } finally {
-            setStateChangeLoading(false);
-        }
-    };
-
-    const handleCancel = async (id) => {
-        setCancelLoading(true);
-        try {
-            await onCancel(id);
-        } finally {
-            setCancelLoading(false);
-        }
-    };
-
-    const handleMapPress = async (latitude, longitude) => {
-        setMapLoading(true);
-        try {
-            await openMap(latitude, longitude);
-        } finally {
-            setMapLoading(false);
         }
     };
 
@@ -154,22 +121,15 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                         </View>
                     </View>
                     <TouchableOpacity 
-                        style={[styles.mapButton, isMapLoading && styles.buttonDisabled]}
-                        onPress={() => handleMapPress(shipment.trader.location.latitude, shipment.trader.location.longitude)}
-                        disabled={isMapLoading}
+                        style={styles.mapButton}
+                        onPress={() => openMap(shipment.trader.location.latitude, shipment.trader.location.longitude)}
                     >
                         <LinearGradient
                             colors={[GREEN, GREEN + 'DD']}
                             style={styles.mapButtonGradient}
                         >
-                            {isMapLoading ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
-                            ) : (
-                                <>
-                                    <Ionicons name="navigate" size={20} color="#FFFFFF" />
-                                    <Text style={styles.mapButtonText}>الموقع</Text>
-                                </>
-                            )}
+                            <Ionicons name="navigate" size={20} color="#FFFFFF" />
+                            <Text style={styles.mapButtonText}>الموقع</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
@@ -206,85 +166,57 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                     <View style={styles.actionButtons}>
                         {shipment.state === 'Waiting For Receiving' && (
                             <TouchableOpacity 
-                                style={[styles.stateButton, isStateChangeLoading && styles.buttonDisabled]}
-                                onPress={() => handleStateChange(shipment.id, 'Received')}
-                                disabled={isStateChangeLoading}
+                                style={styles.stateButton}
+                                onPress={() => onStateChange(shipment.id, 'Received')}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    {isStateChangeLoading ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-                                            <Text style={styles.buttonText}>تأكيد الاستلام</Text>
-                                        </>
-                                    )}
+                                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                                    <Text style={styles.buttonText}>تأكيد الاستلام</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state === 'Received' && (
                             <TouchableOpacity 
-                                style={[styles.stateButton, isStateChangeLoading && styles.buttonDisabled]}
-                                onPress={() => handleStateChange(shipment.id, 'Shipping')}
-                                disabled={isStateChangeLoading}
+                                style={styles.stateButton}
+                                onPress={() => onStateChange(shipment.id, 'Shipping')}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    {isStateChangeLoading ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="car" size={20} color="#FFFFFF" />
-                                            <Text style={styles.buttonText}>بدء التوصيل</Text>
-                                        </>
-                                    )}
+                                    <Ionicons name="car" size={20} color="#FFFFFF" />
+                                    <Text style={styles.buttonText}>بدء التوصيل</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state === 'Shipping' && (
                             <TouchableOpacity 
-                                style={[styles.stateButton, isStateChangeLoading && styles.buttonDisabled]}
-                                onPress={() => handleStateChange(shipment.id, 'Shipped')}
-                                disabled={isStateChangeLoading}
+                                style={styles.stateButton}
+                                onPress={() => onStateChange(shipment.id, 'Shipped')}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    {isStateChangeLoading ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="flag" size={20} color="#FFFFFF" />
-                                            <Text style={styles.buttonText}>تم التوصيل</Text>
-                                        </>
-                                    )}
+                                    <Ionicons name="flag" size={20} color="#FFFFFF" />
+                                    <Text style={styles.buttonText}>تم التوصيل</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state !== 'Shipped' && (
                             <TouchableOpacity 
-                                style={[styles.cancelButton, isCancelLoading && styles.buttonDisabled]}
-                                onPress={() => handleCancel(shipment.id)}
-                                disabled={isCancelLoading}
+                                style={styles.cancelButton}
+                                onPress={() => onCancel(shipment.id)}
                             >
                                 <View style={styles.cancelButtonContent}>
-                                    {isCancelLoading ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="close-circle" size={20} color="#E5E7EB" />
-                                            <Text style={styles.cancelButtonText}>إلغاء</Text>
-                                        </>
-                                    )}
+                                    <Ionicons name="close-circle" size={20} color="#EF4444" />
+                                    <Text style={styles.cancelButtonText}>إلغاء</Text>
                                 </View>
                             </TouchableOpacity>
                         )}
@@ -293,41 +225,6 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
             </View>
         </View>
     );
-};
-
-const getStatusColors = (state) => {
-    switch (state) {
-        case 'Waiting For Receiving':
-            return {
-                primary: '#FF9800',    // Warm Orange
-                secondary: '#FFA726',   // Light Orange
-                text: '#FFFFFF'
-            };
-        case 'Received':
-            return {
-                primary: '#4CAF50',    // Material Green
-                secondary: '#66BB6A',   // Light Green
-                text: '#FFFFFF'
-            };
-        case 'Shipping':
-            return {
-                primary: '#2196F3',    // Material Blue
-                secondary: '#42A5F5',   // Light Blue
-                text: '#FFFFFF'
-            };
-        case 'Shipped':
-            return {
-                primary: '#9C27B0',    // Material Purple
-                secondary: '#AB47BC',   // Light Purple
-                text: '#FFFFFF'
-            };
-        default:
-            return {
-                primary: '#757575',    // Material Gray
-                secondary: '#BDBDBD',   // Light Gray
-                text: '#FFFFFF'
-            };
-    }
 };
 
 const styles = StyleSheet.create({
@@ -350,13 +247,13 @@ const styles = StyleSheet.create({
     statusBar: {
         paddingVertical: 14,
         paddingHorizontal: 16,
-        elevation: 3,
-        shadowColor: "#000",
+        elevation: 2,
+        shadowColor: "#264a2c",
         shadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1,
         shadowRadius: 3,
     },
     statusContent: {
@@ -369,9 +266,6 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         textAlign: 'center',
-        textShadowColor: 'rgba(0, 0, 0, 0.1)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
     },
     contentContainer: {
         padding: 16,
@@ -592,59 +486,54 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         textAlign: 'center',
     },
-    buttonDisabled: {
-        opacity: 0.7,
-    },
-    loadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-    },
 });
 
 export default function MyShipmentsScreen() {
     const { user } = useContext(AuthContext);
     const [shipments, setShipments] = useState([]);
-    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const loadData = async () => {
+    const loadShipments = async () => {
         try {
-            const [shipmentsResponse, notificationsResponse] = await Promise.all([
-                axios.get(`/driver/${user.id}/shipments`),
-                axios.get(`/user/${user.id}/notifications`)
-            ]);
-            
-            setShipments(shipmentsResponse.data);
-            setNotifications(notificationsResponse.data);
+            const { data } = await axios.get(`/driver/${user.id}/shipments`);
+            console.log('Loaded shipments:', data);
+            setShipments(data);
         } catch (error) {
-            console.error('Error loading data:', error);
-            Alert.alert('خطأ', 'حدث خطأ في تحميل البيانات');
+            console.error('Error loading shipments:', error);
+            Alert.alert('خطأ', 'حدث خطأ في تحميل الشحنات');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    const handleNotificationAction = async (url) => {
+    useEffect(() => {
+        loadShipments();
+    }, []);
+
+    const handleStateChange = async (shipmentId, newState) => {
         try {
-            await axios.post(url);
-            loadData(); // Refresh both shipments and notifications
-            Alert.alert('نجاح', 'تم تنفيذ الإجراء بنجاح');
+            console.log('Changing state:', { shipmentId, newState });
+            await axios.post(`/shipments/${shipmentId}/${newState}`);
+            Alert.alert('نجاح', 'تم تحديث حالة الشحنة بنجاح');
+            loadShipments();
         } catch (error) {
-            console.error('Error handling notification action:', error);
-            Alert.alert('خطأ', 'حدث خطأ أثناء تنفيذ الإجراء');
+            console.error('Error updating shipment state:', error);
+            Alert.alert('خطأ', 'حدث خطأ في تحديث حالة الشحنة');
         }
     };
 
-    useFocusEffect(
-        React.useCallback(() => {
-            setLoading(true);
-            loadData();
-        }, [])
-    );
+    const handleCancel = async (shipmentId) => {
+        try {
+            await axios.post(`/shipments/${shipmentId}/cancel`);
+            Alert.alert('نجاح', 'تم إلغاء الشحنة بنجاح');
+            loadShipments();
+        } catch (error) {
+            console.error('Error canceling shipment:', error);
+            Alert.alert('خطأ', 'حدث خطأ في إلغاء الشحنة');
+        }
+    };
 
     if (loading) {
         return (
@@ -657,23 +546,25 @@ export default function MyShipmentsScreen() {
     return (
         <View style={styles.container}>
             <FlatList
-                data={notifications}
+                data={shipments}
                 renderItem={({ item }) => (
-                    <TraderOrderNotification 
-                        notification={item}
-                        onAction={handleNotificationAction}
+                    <ShipmentItem 
+                        shipment={item}
+                        onStateChange={handleStateChange}
+                        onCancel={handleCancel}
                     />
                 )}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.id.toString()}
+                contentContainerStyle={styles.listContainer}
                 refreshing={refreshing}
                 onRefresh={() => {
                     setRefreshing(true);
-                    loadData();
+                    loadShipments();
                 }}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="notifications-outline" size={64} color={GREEN} />
-                        <Text style={styles.emptyText}>لا توجد إشعارات حالياً</Text>
+                        <Ionicons name="car-outline" size={64} color={GREEN} />
+                        <Text style={styles.emptyText}>لا توجد شحنات حالياً</Text>
                     </View>
                 }
             />
