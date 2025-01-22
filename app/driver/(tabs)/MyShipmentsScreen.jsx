@@ -65,6 +65,9 @@ const StateProgressBar = ({ currentState }) => {
 };
 
 const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
+    const [isStateLoading, setStateLoading] = useState(false);
+    const [isCancelLoading, setCancelLoading] = useState(false);
+
     const openMap = (latitude, longitude) => {
         const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
         Linking.openURL(url);
@@ -84,6 +87,24 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                 return 'flag-outline';
             default:
                 return 'ellipse-outline';
+        }
+    };
+
+    const handleStateChange = async (id, newState) => {
+        setStateLoading(true);
+        try {
+            await onStateChange(id, newState);
+        } finally {
+            setStateLoading(false);
+        }
+    };
+
+    const handleCancel = async (id) => {
+        setCancelLoading(true);
+        try {
+            await onCancel(id);
+        } finally {
+            setCancelLoading(false);
         }
     };
 
@@ -166,57 +187,85 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                     <View style={styles.actionButtons}>
                         {shipment.state === 'Waiting For Receiving' && (
                             <TouchableOpacity 
-                                style={styles.stateButton}
-                                onPress={() => onStateChange(shipment.id, 'Received')}
+                                style={[styles.stateButton, isStateLoading && styles.buttonDisabled]}
+                                onPress={() => handleStateChange(shipment.id, 'Received')}
+                                disabled={isStateLoading}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-                                    <Text style={styles.buttonText}>تأكيد الاستلام</Text>
+                                    {isStateLoading ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                                            <Text style={styles.buttonText}>تأكيد الاستلام</Text>
+                                        </>
+                                    )}
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state === 'Received' && (
                             <TouchableOpacity 
-                                style={styles.stateButton}
-                                onPress={() => onStateChange(shipment.id, 'Shipping')}
+                                style={[styles.stateButton, isStateLoading && styles.buttonDisabled]}
+                                onPress={() => handleStateChange(shipment.id, 'Shipping')}
+                                disabled={isStateLoading}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    <Ionicons name="car" size={20} color="#FFFFFF" />
-                                    <Text style={styles.buttonText}>بدء التوصيل</Text>
+                                    {isStateLoading ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="car" size={20} color="#FFFFFF" />
+                                            <Text style={styles.buttonText}>بدء التوصيل</Text>
+                                        </>
+                                    )}
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state === 'Shipping' && (
                             <TouchableOpacity 
-                                style={styles.stateButton}
-                                onPress={() => onStateChange(shipment.id, 'Shipped')}
+                                style={[styles.stateButton, isStateLoading && styles.buttonDisabled]}
+                                onPress={() => handleStateChange(shipment.id, 'Shipped')}
+                                disabled={isStateLoading}
                             >
                                 <LinearGradient
                                     colors={[GREEN, GREEN + 'DD']}
                                     style={styles.buttonGradient}
                                 >
-                                    <Ionicons name="flag" size={20} color="#FFFFFF" />
-                                    <Text style={styles.buttonText}>تم التوصيل</Text>
+                                    {isStateLoading ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="flag" size={20} color="#FFFFFF" />
+                                            <Text style={styles.buttonText}>تم التوصيل</Text>
+                                        </>
+                                    )}
                                 </LinearGradient>
                             </TouchableOpacity>
                         )}
 
                         {shipment.state !== 'Shipped' && (
                             <TouchableOpacity 
-                                style={styles.cancelButton}
-                                onPress={() => onCancel(shipment.id)}
+                                style={[styles.cancelButton, isCancelLoading && styles.buttonDisabled]}
+                                onPress={() => handleCancel(shipment.id)}
+                                disabled={isCancelLoading || isStateLoading}
                             >
                                 <View style={styles.cancelButtonContent}>
-                                    <Ionicons name="close-circle" size={20} color="#EF4444" />
-                                    <Text style={styles.cancelButtonText}>إلغاء</Text>
+                                    {isCancelLoading ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="close-circle" size={20} color="#FFFFFF" />
+                                            <Text style={styles.cancelButtonText}>إلغاء</Text>
+                                        </>
+                                    )}
                                 </View>
                             </TouchableOpacity>
                         )}
@@ -485,6 +534,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#6B7280',
         textAlign: 'center',
+    },
+    buttonDisabled: {
+        opacity: 0.7,
     },
 });
 
