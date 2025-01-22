@@ -96,9 +96,9 @@ export default function WholesaleStoresScreen() {
             <View style={styles.header}>
                 <View style={styles.headerTop}>
 
-                    <Text style={styles.headerTitle}>ممحل تجزئة الجملة</Text>
+                    <Text style={styles.headerTitle}>محلات الجملة</Text>
                 </View>
-                <Text style={styles.headerSubtitle}>اكتشف أفضل ممحل تجزئة الجملة في مدينتك</Text>
+                <Text style={styles.headerSubtitle}>اكتشف أفضل محلات الجملة في مدينتك</Text>
             </View>
             <View style={styles.searchContainer}>
                 <Ionicons name="search-outline" size={24} color="#666666" style={styles.searchIcon} />

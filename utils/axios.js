@@ -2,7 +2,7 @@ import axiosLib from "axios";
 import {getToken} from '../services/TokenService';
 
 const axios = axiosLib.create({
-    baseURL: 'https://ecvo1vegnl.sharedwithexpose.com/api',
+    baseURL: 'https://joumla.laraplay.fun/api',
     headers: {
         Accept: 'application/json',
     },
