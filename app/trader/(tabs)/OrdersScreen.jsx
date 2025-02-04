@@ -48,6 +48,8 @@ const OrderItem = ({ item }) => {
                 return 'تم التوصيل';
             case 'Waiting For Shipping':
                 return 'في انتظار التوصيل';
+            case 'Waiting For Receiving':
+                return 'في انتظار الاستلام';
             case 'Shipping':
                 return 'جاري التوصيل';
             default:
@@ -79,17 +81,17 @@ const OrderItem = ({ item }) => {
                         </View>
                         <View style={{display: 'flex', gap: 5}}>
                             <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                                <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                                 <Text style={[styles.statusText, { color: statusColors.text }]}>
                                     {getStatusText(item.state)}
                                 </Text>
+                                <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                             </View>
                             { item.state === 'Approved' && item.shipmentState !== 'Pending' && (
                                 <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                                    <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                                     <Text style={[styles.statusText, { color: statusColors.text }]}>
                                         {getStatusText(item.shipmentState)}
                                     </Text>
+                                    <View style={[styles.statusDot, { backgroundColor: statusColors.dot }]} />
                                 </View>
                             ) }
 
@@ -136,11 +138,11 @@ const OrderItem = ({ item }) => {
                                 </View>
                                 <View style={styles.productInfo}>
                                     <Text style={styles.productName}>{product.product_name}</Text>
+                                    <View style={styles.quantityContainer}>
+                                        <Ionicons name="layers-outline" size={14} color="#6B7280" />
+                                        <Text style={styles.quantity}>الكمية: {product.quantity}</Text>
+                                    </View>
                                     <View style={styles.productMetaInfo}>
-                                        <View style={styles.quantityContainer}>
-                                            <Ionicons name="layers-outline" size={14} color="#6B7280" />
-                                            <Text style={styles.quantity}>الكمية: {product.quantity}</Text>
-                                        </View>
                                         <Text style={styles.price}>{product.price} دينار</Text>
                                     </View>
                                 </View>
@@ -401,6 +403,8 @@ const styles = StyleSheet.create({
     },
     productInfo: {
         flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
     },
     productName: {
         fontSize: 16,

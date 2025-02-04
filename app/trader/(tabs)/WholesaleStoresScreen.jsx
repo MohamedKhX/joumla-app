@@ -61,7 +61,7 @@ export default function WholesaleStoresScreen() {
             setStores(data);
         } catch (error) {
             console.error('Error loading stores:', error);
-            setError('حدث خطأ في تحميل الممحل تجزئة');
+            setError('حدث خطأ في تحميل محلات الجملة');
         } finally {
             setLoading(false);
         }
@@ -95,7 +95,6 @@ export default function WholesaleStoresScreen() {
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
                 <View style={styles.headerTop}>
-
                     <Text style={styles.headerTitle}>محلات الجملة</Text>
                 </View>
                 <Text style={styles.headerSubtitle}>اكتشف أفضل محلات الجملة في مدينتك</Text>
@@ -104,7 +103,7 @@ export default function WholesaleStoresScreen() {
                 <Ionicons name="search-outline" size={24} color="#666666" style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="ابحث عن الممحل تجزئة"
+                    placeholder="ابحث عن محلات الجملة"
                     placeholderTextColor="#666666"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -143,6 +142,8 @@ const styles = StyleSheet.create({
         backgroundColor: GREEN,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
+        textAlign: 'right',
+
     },
     headerTitle: {
         fontSize: 32,
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontFamily: 'Arial',
         textAlign: 'right',
+
     },
     headerSubtitle: {
         fontSize: 18,
@@ -257,9 +259,10 @@ const styles = StyleSheet.create({
     },
     headerTop: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         marginBottom: 10,
+        textAlign: 'right',
     },
     logoutButton: {
         flexDirection: 'row',

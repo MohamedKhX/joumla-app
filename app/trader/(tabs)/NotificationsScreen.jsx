@@ -242,7 +242,7 @@ const NotificationItem = ({ item }) => {
                 <View style={styles.textContainer}>
                     <Text style={styles.notificationTitle}>{item.title}</Text>
                     <Text style={styles.notificationBody}>{item.body}</Text>
-                    <Text style={styles.timeAgo}>{getTimeAgo(item.created_at)}</Text>
+                    <Text style={styles.timeAgo}>{item.created_at}</Text>
                 </View>
             </LinearGradient>
         </Animated.View>

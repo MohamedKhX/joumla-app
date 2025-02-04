@@ -210,11 +210,17 @@ export default function ShipmentsScreen() {
     useColorScheme(); // We add this but don't use its value to prevent theme changes
 
     const checkActiveShipment = async () => {
+        if (!user) {
+            console.log('User is not loaded yet');
+            return;
+        }
+
         try {
+            console.log('----------------------------------------------------------------------------------:', user);
             const { data } = await axios.get(`/driver/${user.id}/shipments`);
-            const active = !!data.find(shipment => 
-                shipment.state === 'Waiting For Receiving' || 
-                shipment.state === 'Received' || 
+            const active = !!data.find(shipment =>
+                shipment.state === 'Waiting For Receiving' ||
+                shipment.state === 'Received' ||
                 shipment.state === 'Shipping'
             );
             setActiveShipment(active);
@@ -223,6 +229,12 @@ export default function ShipmentsScreen() {
             setActiveShipment(false);
         }
     };
+
+    useEffect(() => {
+        if (user) {
+            checkActiveShipment();
+        }
+    }, [user]);
 
     const loadShipments = async () => {
         try {
