@@ -116,6 +116,15 @@ export default function TabsLayout() {
                     ),
                 }}
             />
+            <Tabs.Screen
+                name="ProfileScreen"
+                options={{
+                    title: 'الملف الشخصي',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="person-outline" size={size} color={color} />
+                    ),
+                }}
+            />
         </Tabs>
     );
 }
