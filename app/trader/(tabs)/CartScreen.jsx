@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Image,
     ScrollView,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { CartContext } from '../../../contexts/CartContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,8 @@ import logo from '../../../assets/images/logo.webp';
 import AuthContext from '../../../contexts/AuthContext';
 import axios from '../../../utils/axios';
 import Checkbox from 'expo-checkbox';
+import picker from "react-native-web/dist/exports/Picker";
+import {Picker} from "@react-native-picker/picker";
 
 const GREEN = '#34D399';
 
@@ -95,11 +98,35 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
             </View>
         </View>
     );
-};export default function CartScreen() {
+};
+
+export default function CartScreen() {
     const { user } = useContext(AuthContext);
     const { cart, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const stores = Object.entries(cart);
+    const [areas, setAreas] = useState([]);
+    const [selectedArea, setSelectedArea] = useState(null);
+    const [loadingAreas, setLoadingAreas] = useState(true);
+
+    useEffect(() => {
+        loadAreas();
+    }, []);
+
+    const loadAreas = async () => {
+        try {
+            const { data } = await axios.get('/areas');
+            setAreas(data);
+            if (data.length > 0) {
+                setSelectedArea(data[0].id);
+            }
+        } catch (error) {
+            console.error('Error loading areas:', error);
+            Alert.alert('خطأ', 'حدث خطأ في تحميل مناطق التوصيل');
+        } finally {
+            setLoadingAreas(false);
+        }
+    };
 
     if (stores.length === 0) {
         return (
@@ -116,6 +143,11 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
         ), 0
     );
 
+    const deliveryFee = selectedArea ? 
+        areas.find(area => area.id === selectedArea)?.price || 0 : 0;
+
+    const grandTotal = totalAmount + deliveryFee;
+
     const allStoresMeetMinimum = stores.every(([_, storeData]) => {
         const storeTotal = storeData.products.reduce((total, item) => 
             total + (parseFloat(item.product.price) * item.quantity), 0
@@ -124,6 +156,11 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
     });
 
     const handleCheckout = async () => {
+        if (!selectedArea) {
+            Alert.alert('تنبيه', 'الرجاء اختيار منطقة التوصيل');
+            return;
+        }
+
         if (!allStoresMeetMinimum) {
             Alert.alert(
                 'تنبيه',
@@ -135,7 +172,6 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
 
         try {
             setIsSubmitting(true);
-            // Format orders data
             const orders = stores.map(([storeId, storeData]) => ({
                 wholesale_store_id: parseInt(storeId),
                 products: storeData.products.map(item => ({
@@ -143,36 +179,22 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
                     quantity: item.quantity,
                     price: parseFloat(item.product.price)
                 })),
-                deferred: storeData.is_deferred // Add deferred status
+                deferred: storeData.is_deferred
             }));
 
-            // Submit order with user.trader_id instead of user.id
             await axios.post('/trader/orders', {
                 trader_id: user.trader.id,
+                area_id: selectedArea,
                 orders: orders
             });
 
-            // Clear cart after successful order
             clearCart();
-
-            // Show success message
-            Alert.alert(
-                'نجاح',
-                'تم إرسال طلبك بنجاح',
-                [{ text: '��سناً', style: 'default' }]
-            );
-
+            Alert.alert('نجاح', 'تم إرسال طلبك بنجاح', [{ text: 'حسناً', style: 'default' }]);
         } catch (error) {
             console.error('Order submission error:', error);
-            let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
-
-            if (error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-
             Alert.alert(
                 'خطأ',
-                errorMessage,
+                error.response?.data?.message || 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى',
                 [{ text: 'حسناً', style: 'default' }]
             );
         } finally {
@@ -194,9 +216,42 @@ const StoreSection = ({ storeId, storeData, onRemoveItem, onUpdateQuantity }) =>
                 ))}
             </ScrollView>
             <View style={styles.footer}>
-                <Text style={styles.totalAmount}>
-                    المجموع الكلي: {totalAmount.toFixed(2)} دينار
-                </Text>
+                <View style={styles.deliverySection}>
+                    <Text style={styles.deliveryLabel}>منطقة التوصيل:</Text>
+                    {loadingAreas ? (
+                        <ActivityIndicator size="small" color={GREEN} />
+                    ) : (
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={selectedArea}
+                                onValueChange={setSelectedArea}
+                                style={styles.picker}
+                            >
+                                {areas.map(area => (
+                                    <Picker.Item 
+                                        key={area.id}
+                                        label={`${area.name} (${area.price} دينار)`}
+                                        value={area.id}
+                                    />
+                                ))}
+                            </Picker>
+                        </View>
+                    )}
+                </View>
+                <View style={styles.totalBreakdown}>
+                    <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>المجموع الفرعي:</Text>
+                        <Text style={styles.totalValue}>{totalAmount.toFixed(2)} دينار</Text>
+                    </View>
+                    <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>رسوم التوصيل:</Text>
+                        <Text style={styles.totalValue}>{deliveryFee.toFixed(2)} دينار</Text>
+                    </View>
+                    <View style={[styles.totalRow, styles.grandTotalRow]}>
+                        <Text style={styles.grandTotalLabel}>الإجمالي:</Text>
+                        <Text style={styles.grandTotalValue}>{grandTotal.toFixed(2)} دينار</Text>
+                    </View>
+                </View>
                 <TouchableOpacity 
                     style={[
                         styles.checkoutButton,
@@ -330,12 +385,59 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#EEEEEE',
     },
-    totalAmount: {
-        fontSize: 18,
+    deliverySection: {
+        marginBottom: 15,
+    },
+    deliveryLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333333',
+        marginBottom: 8,
+        textAlign: 'right',
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 8,
+        backgroundColor: '#F9FAFB',
+        marginBottom: 10,
+    },
+    picker: {
+        height: 50,
+    },
+    totalBreakdown: {
+        marginBottom: 15,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    totalLabel: {
+        fontSize: 14,
+        color: '#666666',
+    },
+    totalValue: {
+        fontSize: 14,
+        color: '#333333',
+        fontWeight: '600',
+    },
+    grandTotalRow: {
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 8,
+        marginTop: 8,
+    },
+    grandTotalLabel: {
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#333333',
-        textAlign: 'right',
-        marginBottom: 10,
+    },
+    grandTotalValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: GREEN,
     },
     checkoutButton: {
         backgroundColor: GREEN,
