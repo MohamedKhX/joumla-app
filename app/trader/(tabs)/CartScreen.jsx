@@ -245,11 +245,11 @@ export default function CartScreen() {
                     </View>
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>رسوم التوصيل:</Text>
-                        <Text style={styles.totalValue}>{deliveryFee.toFixed(2)} دينار</Text>
+                        <Text style={styles.totalValue}> دينار</Text>
                     </View>
                     <View style={[styles.totalRow, styles.grandTotalRow]}>
                         <Text style={styles.grandTotalLabel}>الإجمالي:</Text>
-                        <Text style={styles.grandTotalValue}>{grandTotal.toFixed(2)} دينار</Text>
+                        <Text style={styles.grandTotalValue}> دينار</Text>
                     </View>
                 </View>
                 <TouchableOpacity 
