@@ -102,7 +102,7 @@ const OrderItem = ({ item }) => {
                     <View style={styles.orderSummary}>
                         <View style={styles.totalContainer}>
                             <Text style={styles.totalAmount}>
-                                {parseInt(item.total_amount) + parseInt(item.shipment_deliver_price)} دينار
+                                {parseInt(item.total_amount)} دينار
                             </Text>
                             <Text style={styles.totalLabel}>المجموع:</Text>
                         </View>
@@ -162,9 +162,6 @@ const OrderItem = ({ item }) => {
                                 </Text>
                                 <Text style={styles.orderTotal}>
                                     سعر المنتجات: {item.total_amount} دينار
-                                </Text>
-                                <Text style={styles.orderTotal}>
-                                    المجموع النهائي: {parseInt(item.total_amount) + parseInt(item.shipment_deliver_price)} دينار
                                 </Text>
                             </LinearGradient>
                         </View>

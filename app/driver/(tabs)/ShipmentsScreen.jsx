@@ -143,10 +143,20 @@ const ShipmentItem = ({ shipment, onAccept, onComplete, activeShipment }) => {
                     style={styles.shipmentFooter}
                 >
                     <View style={styles.totalContainer}>
-                        <Text style={styles.totalLabel}>المجموع: </Text>
-                        <Text style={styles.totalAmount}>
-                            {shipment.total_amount} دينار
-                        </Text>
+                        <Text style={styles.totalLabel}>المنطقة:</Text>
+                        <Text style={styles.totalAmount}>{shipment.shipment_area_name} </Text>
+                    </View>
+                    <View style={styles.totalContainer}>
+                        <Text style={styles.totalLabel}>سعر التوصيل:</Text>
+                        <Text style={styles.totalAmount}>{parseInt(shipment.shipment_deliver_price)} دينار</Text>
+                    </View>
+                    <View style={styles.totalContainer}>
+                        <Text style={styles.totalLabel}>سعر المنتجات:</Text>
+                        <Text style={styles.totalAmount}>{shipment.total_amount} دينار</Text>
+                    </View>
+                    <View style={styles.totalContainer}>
+                        <Text style={styles.totalLabel}>المجموع:</Text>
+                        <Text style={styles.totalAmount}>{parseInt(shipment.shipment_deliver_price) + parseInt(shipment.total_amount)} دينار</Text>
                     </View>
                     <View style={styles.actionButtons}>
                         <TouchableOpacity 
