@@ -70,18 +70,21 @@ export default function ProfileScreen() {
             const { data } = await axios.get(`/traders/${user.trader.id}`);
             console.log('Trader data:', data);
 
+            console.log('--------------------------------------------')
+            console.log(data.location.latitude, data.location.longitude);
+            console.log('--------------------------------------------')
+
             setFormData({
                 name: data.store_name,
                 address: data.address,
                 city: data.city,
                 phone: data.phone,
-                location_latitude: data.location.latitude,
-                location_longitude: data.location.longitude,
+                location_latitude: parseFloat(data.location.latitude),
+                location_longitude: parseFloat(data.location.longitude),
                 logo: data.logo,
                 user: {
                     name: data.user.name,
                     email: data.user.email,
-                    phone: data.user.phone || '',
                 }
             });
 
@@ -134,7 +137,6 @@ export default function ProfileScreen() {
         if (!formData.phone) newErrors.phone = 'رقم الهاتف مطلوب';
         if (!formData.user.email) newErrors.email = 'البريد الإلكتروني مطلوب';
         if (!formData.user.name) newErrors.userName = 'اسم المستخدم مطلوب';
-        if (!formData.user.phone) newErrors.userPhone = 'رقم الهاتف مطلوب';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -189,7 +191,6 @@ export default function ProfileScreen() {
                 ...user,
                 name: formData.user.name,
                 email: formData.user.email,
-                phone: formData.user.phone,
             });
 
         } catch (error) {
@@ -313,22 +314,6 @@ export default function ProfileScreen() {
                         keyboardType="email-address"
                     />
                     {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-
-                    <TextInput
-                        style={[styles.input, errors.userPhone && styles.inputError]}
-                        value={formData.user.phone}
-                        onChangeText={(text) => {
-                            setFormData(prev => ({
-                                ...prev,
-                                user: { ...prev.user, phone: text }
-                            }));
-                            setErrors(prev => ({ ...prev, userPhone: null }));
-                        }}
-                        placeholder="رقم الهاتف"
-                        textAlign="right"
-                        keyboardType="phone-pad"
-                    />
-                    {errors.userPhone && <Text style={styles.errorText}>{errors.userPhone}</Text>}
                 </View>
 
                 {/* Location Section */}

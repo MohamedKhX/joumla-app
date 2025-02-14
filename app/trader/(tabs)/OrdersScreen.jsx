@@ -102,10 +102,11 @@ const OrderItem = ({ item }) => {
                     <View style={styles.orderSummary}>
                         <View style={styles.totalContainer}>
                             <Text style={styles.totalAmount}>
-                                {item.total_amount} دينار
+                                {parseInt(item.total_amount) + parseInt(item.shipment_deliver_price)} دينار
                             </Text>
                             <Text style={styles.totalLabel}>المجموع:</Text>
                         </View>
+
                         <TouchableOpacity 
                             style={styles.expandButton}
                             activeOpacity={0.7}
@@ -154,7 +155,16 @@ const OrderItem = ({ item }) => {
                                 style={styles.totalGradient}
                             >
                                 <Text style={styles.orderTotal}>
-                                    المجموع النهائي: {item.total_amount} دينار
+                                    المنطقة: {item.shipment_area_name}
+                                </Text>
+                                <Text style={styles.orderTotal}>
+                                    سعر التوصيل: {parseInt(item.shipment_deliver_price)} دينار
+                                </Text>
+                                <Text style={styles.orderTotal}>
+                                    سعر المنتجات: {item.total_amount} دينار
+                                </Text>
+                                <Text style={styles.orderTotal}>
+                                    المجموع النهائي: {parseInt(item.total_amount) + parseInt(item.shipment_deliver_price)} دينار
                                 </Text>
                             </LinearGradient>
                         </View>
@@ -224,6 +234,19 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
+    totalGradient: {
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        marginVertical: 10,
+    },
+    orderTotal: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1F2937',
+        marginBottom: 5,
+        textAlign: 'right',
+    },
     container: {
         padding: 15,
         paddingBottom: 100,
@@ -313,11 +336,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 5,
     },
-    totalGradient: {
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-    },
+
     orderTopSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -433,11 +452,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         alignItems: 'flex-end',
-    },
-    orderTotal: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1F2937',
     },
     expandIcon: {
         marginRight: 4,

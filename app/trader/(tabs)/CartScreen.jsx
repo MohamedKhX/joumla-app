@@ -146,7 +146,7 @@ export default function CartScreen() {
     const deliveryFee = selectedArea ? 
         areas.find(area => area.id === selectedArea)?.price || 0 : 0;
 
-    const grandTotal = totalAmount + deliveryFee;
+    const grandTotal = parseInt(totalAmount) + parseInt(deliveryFee);
 
     const allStoresMeetMinimum = stores.every(([_, storeData]) => {
         const storeTotal = storeData.products.reduce((total, item) => 
@@ -240,16 +240,16 @@ export default function CartScreen() {
                 </View>
                 <View style={styles.totalBreakdown}>
                     <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>المجموع الفرعي:</Text>
                         <Text style={styles.totalValue}>{totalAmount.toFixed(2)} دينار</Text>
+                        <Text style={styles.totalLabel}>المجموع الفرعي:</Text>
                     </View>
                     <View style={styles.totalRow}>
+                        <Text style={styles.totalValue}>{deliveryFee} دينار</Text>
                         <Text style={styles.totalLabel}>رسوم التوصيل:</Text>
-                        <Text style={styles.totalValue}> دينار</Text>
                     </View>
                     <View style={[styles.totalRow, styles.grandTotalRow]}>
+                        <Text style={styles.grandTotalValue}>{grandTotal} دينار</Text>
                         <Text style={styles.grandTotalLabel}>الإجمالي:</Text>
-                        <Text style={styles.grandTotalValue}> دينار</Text>
                     </View>
                 </View>
                 <TouchableOpacity 
