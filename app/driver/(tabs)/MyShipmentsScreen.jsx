@@ -141,7 +141,7 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                             <Text style={styles.shipmentDate}>{shipment.date}</Text>
                         </View>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.mapButton}
                         onPress={() => openMap(shipment.trader.location.latitude, shipment.trader.location.longitude)}
                     >
@@ -163,10 +163,27 @@ const ShipmentItem = ({ shipment, onStateChange, onCancel }) => {
                             colors={[GREEN + '10', GREEN + '05']}
                             style={styles.orderItem}
                         >
-                            <View style={styles.storeHeader}>
-                                <Ionicons name="storefront-outline" size={20} color={GREEN} />
-                                <Text style={styles.storeName}>{order.store_name}</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <View style={styles.storeHeader}>
+                                    <Ionicons name="storefront-outline" size={20} color={GREEN} />
+                                    <Text style={styles.storeName}>{order.store_name}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.mapButton}
+                                    onPress={() => openMap(order.location_latitude, order.location_longitude)}
+                                >
+                                    <LinearGradient
+                                        colors={[GREEN, GREEN + 'DD']}
+                                        style={styles.mapButtonGradient}
+                                    >
+                                        <Ionicons name="navigate" size={20} color="#FFFFFF" />
+                                        <Text style={styles.mapButtonText}>الموقع</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
                             </View>
+
+
+
                             {order.items.map((item, idx) => (
                                 <View key={idx} style={styles.itemRow}>
                                     <Text style={styles.itemQuantity}>×{item.quantity}</Text>
