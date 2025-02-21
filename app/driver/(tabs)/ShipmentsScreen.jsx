@@ -121,6 +121,7 @@ const ShipmentItem = ({ shipment, onAccept, onComplete, activeShipment }) => {
                                     <Ionicons name="storefront" size={18} color={GREEN} />
                                 </View>
                             </View>
+
                             <View style={styles.itemsList}>
                                 {order.items.map((item, idx) => (
                                     <View key={idx} style={styles.itemContainer}>
@@ -134,6 +135,18 @@ const ShipmentItem = ({ shipment, onAccept, onComplete, activeShipment }) => {
                                     </View>
                                 ))}
                             </View>
+                            <TouchableOpacity
+                                style={styles.mapButton}
+                                onPress={() => openMap(order.location_latitude, order.location_longitude)}
+                            >
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFFDD']}
+                                    style={styles.mapButtonGradient}
+                                >
+                                    <Ionicons name="navigate" size={20} color={GREEN} />
+                                    <Text style={styles.mapButtonText}>الموقع</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
                         </LinearGradient>
                     ))}
                 </View>
